@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import webhookRoutes from './routes/webhook.routes';
+import pagesRoutes from './routes/pages.routes';
 import { notificationService } from './services/notification.service';
 
 // Load environment configurations from .env early inside index
@@ -12,7 +13,9 @@ const app = express();
 const PORT = 3000;
 
 // Essential Middlewares
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false, // Allow inline styles/scripts for served HTML pages
+}));
 app.use(cors());
 
 /**
@@ -26,18 +29,13 @@ app.use(
         }
     })
 );
+app.use(express.urlencoded({ extended: true }));
 
-// Modular Routes mount point
+// ── Pages (Home, Health Dashboard, Test Form) ──
+app.use('/', pagesRoutes);
+
+// ── API Routes ──
 app.use('/api/webhooks', webhookRoutes);
-
-// General health-check responder route
-app.get('/health', (req, res) => {
-    res.status(200).json({
-        status: 'ok',
-        whatsappReady: notificationService.isReady(),
-        timestamp: new Date()
-    });
-});
 
 // App Initiation point
 app.listen(PORT, '0.0.0.0', async () => {
