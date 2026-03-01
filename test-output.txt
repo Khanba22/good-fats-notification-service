@@ -1,0 +1,30 @@
+﻿node.exe : node:internal/modules/cjs/loader:1424
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (node:internal/modules/cjs/loader:1424:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  throw err;
+  ^
+
+Error: Cannot find module './test-template.ts'
+Require stack:
+- C:\Freelance\AskNatural\notification-service\imaginaryUncacheableRequireResolveScript
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)
+    at require.resolve (node:internal/modules/helpers:163:19)
+    at requireResolveNonCached (C:\Freelance\AskNatural\notification-service\node_modules\ts-node\dist\bin.js:549:16)
+    at getProjectSearchDir (C:\Freelance\AskNatural\notification-service\node_modules\ts-node\dist\bin.js:519:40)
+    at phase3 (C:\Freelance\AskNatural\notification-service\node_modules\ts-node\dist\bin.js:267:27)
+    at bootstrap (C:\Freelance\AskNatural\notification-service\node_modules\ts-node\dist\bin.js:47:30)
+    at main (C:\Freelance\AskNatural\notification-service\node_modules\ts-node\dist\bin.js:33:12)
+    at Object.<anonymous> (C:\Freelance\AskNatural\notification-service\node_modules\ts-node\dist\bin.js:579:5)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+    at Object..js (node:internal/modules/cjs/loader:1893:10) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Freelance\\AskNatural\\notification-service\\imaginaryUncacheableRequireResolveScript'
+  ]
+}
+
+Node.js v24.12.0
