@@ -9,7 +9,7 @@ import { notificationService } from './services/notification.service';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 // Essential Middlewares
 app.use(helmet());
@@ -40,7 +40,7 @@ app.get('/health', (req, res) => {
 });
 
 // App Initiation point
-app.listen(PORT, async () => {
+app.listen(PORT, '0.0.0.0', async () => {
     console.log(`[Startup] Webhook Integration Server running on port ${PORT}`);
     console.log(`[Startup] Listening for Shopify webhooks securely configured at /api/webhooks/shopify`);
 
