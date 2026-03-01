@@ -15,6 +15,7 @@ import { Router, Request, Response } from "express";
 import { notificationService } from "../services/notification.service";
 import { buildMessageForEvent, isEventEnabled } from "../services/message.service";
 import { extractPhone } from "../utils/phone.utils";
+import { schedulePostDeliveryFollowUps, cancelJobsForOrder, getScheduledJobs } from "../services/scheduler.service";
 
 const router = Router();
 
@@ -110,6 +111,23 @@ router.post("/shopify", async (req: Request, res: Response) => {
 
         if (sent) {
             console.log(`[Shopify] ✅ "${topic}" notification sent successfully`);
+
+            // 6. Schedule follow-up notifications for delivery events
+            if (topic === "orders/fulfilled" || topic === "fulfillments/create") {
+                const orderId = payload?.order_number || payload?.name || payload?.id;
+                schedulePostDeliveryFollowUps(phone, payload, orderId);
+            }
+
+            // 7. Cancel scheduled follow-ups if the order is cancelled
+            if (topic === "orders/cancelled") {
+                const orderId = payload?.order_number || payload?.name || payload?.id;
+                if (orderId) {
+                    const cancelled = cancelJobsForOrder(orderId);
+                    if (cancelled > 0) {
+                        console.log(`[Shopify] 🚫 Cancelled ${cancelled} scheduled follow-up(s) for cancelled order ${orderId}`);
+                    }
+                }
+            }
         } else {
             console.warn(`[Shopify] ⚠️ Failed to send "${topic}" notification`);
         }
@@ -185,6 +203,27 @@ router.post('/templates/preview', (req: Request, res: Response) => {
 
         const message = buildMessageForEvent(topic, payload);
         res.status(200).json({ topic, message, rendered: !!message });
+    } catch (error: any) {
+        res.status(500).json({ status: "error", message: error.message });
+    }
+});
+
+// ==========================================
+// Scheduled Jobs Endpoint
+// ==========================================
+
+/**
+ * GET /api/webhooks/scheduler/jobs
+ * List all currently scheduled follow-up notifications
+ */
+router.get('/scheduler/jobs', (_req: Request, res: Response) => {
+    try {
+        const jobs = getScheduledJobs();
+        res.status(200).json({
+            status: "ok",
+            activeJobs: jobs.length,
+            jobs,
+        });
     } catch (error: any) {
         res.status(500).json({ status: "error", message: error.message });
     }

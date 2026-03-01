@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import webhookRoutes from './routes/webhook.routes';
 import pagesRoutes from './routes/pages.routes';
 import { notificationService } from './services/notification.service';
+import { cancelAllJobs } from './services/scheduler.service';
 
 // Load environment configurations from .env early inside index
 dotenv.config();
@@ -53,12 +54,14 @@ app.listen(PORT, '0.0.0.0', async () => {
 // Graceful shutdown
 process.on('SIGINT', async () => {
     console.log('\nShutting down gracefully...');
+    cancelAllJobs();
     await notificationService.destroy();
     process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
     console.log('\nShutting down gracefully...');
+    cancelAllJobs();
     await notificationService.destroy();
     process.exit(0);
 });
