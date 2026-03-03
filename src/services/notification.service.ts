@@ -4,6 +4,7 @@
  * This service is ONLY responsible for:
  *   1. Managing the WhatsApp client lifecycle (init, destroy, reconnect)
  *   2. Sending pre-built message strings to phone numbers
+ *   3. Auto-reconnecting on disconnect to stay permanently logged in
  * 
  * It has ZERO knowledge of:
  *   - Shopify payloads or event types
@@ -17,41 +18,58 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
 // Admin phone for error alerts (cleaned format, no +)
-const ADMIN_PHONE = process.env.ADMIN_ALERT_PHONE || "916267270136";
+const ADMIN_PHONE = process.env.ADMIN_ALERT_PHONE || "918624909744";
 const ALERT_COOLDOWN_MS = 60_000; // Don't spam alerts — 1 min cooldown
+
+// Reconnection settings
+const RECONNECT_BASE_DELAY_MS = 5_000;      // Start with 5s delay
+const RECONNECT_MAX_DELAY_MS = 5 * 60_000;  // Cap at 5 minutes
+const HEALTH_CHECK_INTERVAL_MS = 5 * 60_000; // Check connection health every 5 min
 
 export class NotificationService {
 
     private client: any = null;
     private ready: boolean = false;
     private lastAlertTime: number = 0;
+    private reconnectAttempts: number = 0;
+    private isReconnecting: boolean = false;
+    private isDestroying: boolean = false;
+    private healthCheckTimer: ReturnType<typeof setInterval> | null = null;
 
     // ─── Lifecycle ──────────────────────────────────────
 
     /**
-     * Initialize the WhatsApp client with QR auth and retry logic.
+     * Initialize the WhatsApp client with QR auth, retry logic,
+     * and a periodic health-check heartbeat.
      */
     public async initialize(): Promise<void> {
         console.log('[WhatsApp] Initializing client...');
+        this.isDestroying = false;
         this.client = this.createClient();
         this.attachEventListeners();
         await this.initializeClient();
+        this.startHealthCheck();
     }
 
     /**
      * Creates a new wwebjs Client instance with standard configuration.
+     * - restartOnAuthFail: automatically restarts when an auth failure is detected,
+     *   avoiding indefinite broken states.
      */
     private createClient(): any {
         return new Client({
             authStrategy: new LocalAuth({
                 dataPath: './.wwebjs_auth'
             }),
+            restartOnAuthFail: true,
             puppeteer: {
                 headless: true,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage'
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-extensions'
                 ]
             }
         });
@@ -89,6 +107,7 @@ export class NotificationService {
 
     /**
      * Attach event listeners for QR, ready, auth, disconnect, and error events.
+     * Includes automatic reconnection on disconnect and auth failures.
      */
     private attachEventListeners(): void {
         this.client.on('qr', (qr: string) => {
@@ -100,6 +119,8 @@ export class NotificationService {
         this.client.on('ready', () => {
             console.log('✅ WhatsApp client is ready!');
             this.ready = true;
+            this.reconnectAttempts = 0; // Reset backoff on successful connection
+            this.isReconnecting = false;
         });
 
         this.client.on('authenticated', () => {
@@ -110,19 +131,150 @@ export class NotificationService {
             console.error('❌ Authentication failure:', msg);
             this.ready = false;
             this.sendErrorAlert(`🔴 WhatsApp Auth Failure\n\n${msg}`);
+            // Auto-reconnect after auth failure
+            this.scheduleReconnect('auth_failure');
         });
 
         this.client.on('disconnected', (reason: string) => {
             console.log('⚠️ WhatsApp client disconnected:', reason);
             this.ready = false;
             this.sendErrorAlert(`🔴 WhatsApp Disconnected\n\nReason: ${reason}`);
+            // Auto-reconnect after disconnect
+            this.scheduleReconnect(reason);
         });
 
         this.client.on('error', (error: any) => {
             console.error('❌ WhatsApp client error:', error);
             this.sendErrorAlert(`🔴 WhatsApp Client Error\n\n${error?.message || error}`);
         });
+
+        // Keep-alive: respond to change_state events
+        this.client.on('change_state', (state: string) => {
+            console.log(`[WhatsApp] State changed → ${state}`);
+            if (state === 'UNPAIRED' || state === 'CONFLICT') {
+                this.ready = false;
+                this.scheduleReconnect(state);
+            }
+        });
     }
+
+    // ─── Auto-Reconnection ─────────────────────────────
+
+    /**
+     * Schedules an automatic reconnection with exponential backoff.
+     * Prevents multiple concurrent reconnect attempts.
+     */
+    private scheduleReconnect(reason: string): void {
+        if (this.isDestroying) {
+            console.log('[WhatsApp] Skipping reconnect — service is shutting down.');
+            return;
+        }
+
+        if (this.isReconnecting) {
+            console.log('[WhatsApp] Reconnect already in progress, skipping.');
+            return;
+        }
+
+        this.isReconnecting = true;
+        this.reconnectAttempts++;
+
+        // Exponential backoff: 5s → 10s → 20s → ... capped at 5 min
+        const delay = Math.min(
+            RECONNECT_BASE_DELAY_MS * Math.pow(2, this.reconnectAttempts - 1),
+            RECONNECT_MAX_DELAY_MS
+        );
+
+        console.log(`[WhatsApp] Auto-reconnect scheduled in ${delay / 1000}s (attempt #${this.reconnectAttempts}, reason: ${reason})`);
+
+        setTimeout(async () => {
+            await this.reconnect();
+        }, delay);
+    }
+
+    /**
+     * Performs the actual reconnection: destroys the old client,
+     * creates a fresh one, and re-initializes.
+     */
+    private async reconnect(): Promise<void> {
+        if (this.isDestroying) {
+            this.isReconnecting = false;
+            return;
+        }
+
+        console.log(`[WhatsApp] Reconnecting... (attempt #${this.reconnectAttempts})`);
+
+        try {
+            // Destroy the old client if it exists
+            if (this.client) {
+                try { await this.client.destroy(); } catch (_e) { /* ignore */ }
+                this.client = null;
+            }
+
+            // Create and initialize a fresh client
+            this.client = this.createClient();
+            this.attachEventListeners();
+            await this.initializeClient();
+
+            console.log('[WhatsApp] ✅ Reconnection successful!');
+            // reconnectAttempts is reset in the 'ready' event handler
+        } catch (error: any) {
+            console.error('[WhatsApp] Reconnection failed:', error?.message || error);
+            this.isReconnecting = false;
+            // Schedule another attempt
+            this.scheduleReconnect('reconnect_failed');
+        }
+    }
+
+    // ─── Health Check Heartbeat ─────────────────────────
+
+    /**
+     * Starts a periodic health check that verifies the client is still
+     * connected. If the client has silently disconnected (e.g., network
+     * blip, phone went offline), this will trigger a reconnect.
+     */
+    private startHealthCheck(): void {
+        this.stopHealthCheck(); // Clear any existing timer
+
+        this.healthCheckTimer = setInterval(async () => {
+            if (this.isDestroying || this.isReconnecting) return;
+
+            try {
+                if (!this.client || !this.ready) {
+                    console.log('[HealthCheck] Client not ready — triggering reconnect.');
+                    this.scheduleReconnect('health_check_not_ready');
+                    return;
+                }
+
+                // Try to get the client state — if this fails, the connection is dead
+                const state = await this.client.getState();
+                if (state !== 'CONNECTED') {
+                    console.log(`[HealthCheck] Client state is "${state}" — triggering reconnect.`);
+                    this.ready = false;
+                    this.scheduleReconnect('health_check_state_' + state);
+                } else {
+                    console.log('[HealthCheck] ✅ Client connected and healthy.');
+                }
+            } catch (error: any) {
+                console.error('[HealthCheck] Failed to get client state:', error?.message || error);
+                this.ready = false;
+                this.scheduleReconnect('health_check_error');
+            }
+        }, HEALTH_CHECK_INTERVAL_MS);
+
+        console.log(`[WhatsApp] Health check started (every ${HEALTH_CHECK_INTERVAL_MS / 1000}s)`);
+    }
+
+    /**
+     * Stops the periodic health check.
+     */
+    private stopHealthCheck(): void {
+        if (this.healthCheckTimer) {
+            clearInterval(this.healthCheckTimer);
+            this.healthCheckTimer = null;
+        }
+    }
+
+    // ─── Public State ───────────────────────────────────
 
     /**
      * Check if the WhatsApp client is ready to send messages.
@@ -132,9 +284,12 @@ export class NotificationService {
     }
 
     /**
-     * Gracefully destroy the WhatsApp client.
+     * Gracefully destroy the WhatsApp client and stop all background tasks.
      */
     public async destroy(): Promise<void> {
+        this.isDestroying = true;
+        this.stopHealthCheck();
+
         if (this.client) {
             console.log('[WhatsApp] Destroying client...');
             await this.client.destroy();
