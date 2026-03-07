@@ -8,10 +8,6 @@
         "enabled": true,
         "template": "Hi {{customer.first_name}},\n\nPayment received successfully ✅\n\nYour C8 MCT Oil is now being processed for dispatch.\n\n— The Good Fats by Askknatural"
     },
-    "orders/fulfilled": {
-        "enabled": true,
-        "template": "Hi {{customer.first_name}},\n\nYour order has been shipped 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\nYou're a few days away from cleaner energy.\n\n— The Good Fats by Askknatural"
-    },
     "fulfillments/create": {
         "enabled": true,
         "template": "Hi {{destination.first_name}},\n\nYour order has been shipped 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\nYou're a few days away from cleaner energy.\n\n— The Good Fats by Askknatural"
