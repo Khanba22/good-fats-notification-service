@@ -72,12 +72,21 @@ function enrichPayload(topic: string, payload: any): any {
  *   → No code changes needed
  */
 router.post("/shopify", async (req: Request, res: Response) => {
-    const topic = req.get("x-shopify-topic") || "";
+    let topic = req.get("x-shopify-topic") || "";
     const rawPayload = req.body;
 
     console.log(`[Shopify] Received webhook: ${topic}`);
 
     try {
+        // First enrich so we can correctly detect delivery
+        const payload = enrichPayload(topic, rawPayload);
+
+        // Detect delivery event to use the new delivered template
+        if (topic === "fulfillments/update" && payload?.shipment_status === "delivered") {
+            topic = "orders/delivered";
+            console.log(`[Shopify] Remapped topic to orders/delivered`);
+        }
+
         // 1. Check if this event is configured and enabled
         if (!isEventEnabled(topic)) {
             console.log(`[Shopify] No enabled template for topic: "${topic}" — skipping notification`);
@@ -85,8 +94,7 @@ router.post("/shopify", async (req: Request, res: Response) => {
             return;
         }
 
-        // 2. Enrich the payload (flatten nested tracking data for order events)
-        const payload = enrichPayload(topic, rawPayload);
+        // 2. Already enriched payload
 
         // 3. Extract phone number from the payload
         const phone = extractPhone(payload);
@@ -113,16 +121,16 @@ router.post("/shopify", async (req: Request, res: Response) => {
             console.log(`[Shopify] ✅ "${topic}" notification sent successfully`);
 
             // 6. Schedule follow-up notifications for delivery events
-            if (topic === "orders/fulfilled" || topic === "fulfillments/create") {
+            if (topic === "orders/delivered") {
                 const orderId = payload?.order_number || payload?.name || payload?.id;
-                schedulePostDeliveryFollowUps(phone, payload, orderId);
+                await schedulePostDeliveryFollowUps(phone, payload, orderId);
             }
 
             // 7. Cancel scheduled follow-ups if the order is cancelled
             if (topic === "orders/cancelled") {
                 const orderId = payload?.order_number || payload?.name || payload?.id;
                 if (orderId) {
-                    const cancelled = cancelJobsForOrder(orderId);
+                    const cancelled = await cancelJobsForOrder(orderId);
                     if (cancelled > 0) {
                         console.log(`[Shopify] 🚫 Cancelled ${cancelled} scheduled follow-up(s) for cancelled order ${orderId}`);
                     }
@@ -216,9 +224,9 @@ router.post('/templates/preview', (req: Request, res: Response) => {
  * GET /api/webhooks/scheduler/jobs
  * List all currently scheduled follow-up notifications
  */
-router.get('/scheduler/jobs', (_req: Request, res: Response) => {
+router.get('/scheduler/jobs', async (_req: Request, res: Response) => {
     try {
-        const jobs = getScheduledJobs();
+        const jobs = await getScheduledJobs();
         res.status(200).json({
             status: "ok",
             activeJobs: jobs.length,
