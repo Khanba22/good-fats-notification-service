@@ -31,24 +31,41 @@ const TEMPLATES_PATH = path.resolve(__dirname, "../config/templates.json");
 
 let templatesCache: TemplateConfig | null = null;
 let lastLoadTime: number = 0;
+let templatesFileMtimeMs = 0;
 const CACHE_TTL_MS = 30_000; // Reload templates every 30 seconds max
 
 /**
  * Loads the templates JSON config with caching.
- * In development, templates are reloaded every 30s so you can edit without restart.
- * In production, they are loaded once and cached.
+ * Reloads when the file changes on disk (mtime) or after TTL expires — including in production,
+ * so deploys that update `templates.json` are picked up without a long-lived stale cache.
  */
 function loadTemplates(): TemplateConfig {
     const now = Date.now();
 
-    if (templatesCache && (process.env.NODE_ENV === "production" || now - lastLoadTime < CACHE_TTL_MS)) {
+    let mtimeMs = 0;
+    try {
+        mtimeMs = fs.statSync(TEMPLATES_PATH).mtimeMs;
+    } catch {
+        mtimeMs = 0;
+    }
+
+    const ttlExpired = !templatesCache || now - lastLoadTime >= CACHE_TTL_MS;
+    const fileChanged = mtimeMs !== 0 && mtimeMs !== templatesFileMtimeMs;
+    const shouldReload = ttlExpired || fileChanged;
+
+    if (!shouldReload && templatesCache) {
         return templatesCache;
     }
 
     try {
         const raw = fs.readFileSync(TEMPLATES_PATH, "utf-8");
-        templatesCache = JSON.parse(raw) as TemplateConfig;
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        const { _docs: _ignoredMeta, ...rest } = parsed;
+        templatesCache = rest as TemplateConfig;
         lastLoadTime = now;
+        if (mtimeMs) {
+            templatesFileMtimeMs = mtimeMs;
+        }
         console.log(`[MessageService] Templates loaded (${Object.keys(templatesCache).length} events configured)`);
         return templatesCache;
     } catch (error: any) {
@@ -106,7 +123,17 @@ export function buildMessageForEvent(topic: string, payload: any): string | null
 export function isEventEnabled(topic: string): boolean {
     const templates = loadTemplates();
     const entry = templates[topic];
-    return !!entry?.enabled;
+    if (!entry) {
+        console.warn(
+            `[MessageService] No template for topic "${topic}". Config has ${Object.keys(templates).length} keys. Loaded from: ${TEMPLATES_PATH}`,
+        );
+        return false;
+    }
+    if (typeof entry !== "object" || !("enabled" in entry)) {
+        console.warn(`[MessageService] Invalid template entry for "${topic}" (expected object with enabled + template)`);
+        return false;
+    }
+    return !!entry.enabled;
 }
 
 /**
@@ -133,5 +160,6 @@ export function getEnabledEvents(): string[] {
 export function reloadTemplates(): void {
     templatesCache = null;
     lastLoadTime = 0;
+    templatesFileMtimeMs = 0;
     loadTemplates();
 }
