@@ -38,14 +38,10 @@ app.use('/', pagesRoutes);
 // ── API Routes ──
 app.use('/api/webhooks', webhookRoutes);
 
-import { jobRunnerService } from './services/job-runner.service';
-
 // App Initiation point
 app.listen(PORT, '0.0.0.0', async () => {
     console.log(`[Startup] Webhook Integration Server running on port ${PORT}`);
     console.log(`[Startup] Listening for Shopify webhooks securely configured at /api/webhooks/shopify`);
-
-    jobRunnerService.start();
 
     // Initialize WhatsApp client
     try {
