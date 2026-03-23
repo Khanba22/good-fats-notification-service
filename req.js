@@ -3,8 +3,8 @@ const fs = require("fs");
 const req = fs.readFileSync("req.json", "utf-8");
 
 const res = fetch(
-  "http://localhost:3000/api/webhooks/shopify",
-  //   "https://robbin-unexecutorial-invitingly.ngrok-free.dev/api/webhooks/shopify",
+  //   "http://localhost:3000/api/webhooks/shopify",
+  "https://robbin-unexecutorial-invitingly.ngrok-free.dev/api/webhooks/shopify",
   {
     method: "POST",
     headers: {
