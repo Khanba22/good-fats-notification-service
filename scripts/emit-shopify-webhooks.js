@@ -5,7 +5,7 @@
  *  - orders/create
  *  - orders/paid
  *  - fulfillments/create
- *  - fulfillments/update (with shipment_status="delivered")
+ *  - fulfillments/update (with shipment_status="out_for_delivery" | "delivered")
  *  - orders/updated
  *
  * Notes:
@@ -125,13 +125,12 @@ async function main() {
     tracking_company: "BlueDart",
   });
 
-  // 4) Fulfillment update (fulfillments/update) => remapped to orders/delivered
-  const fulfillmentsUpdateDelivered = {
+  // 4) Fulfillment update (fulfillments/update) => remapped based on shipment_status
+  const fulfillmentsUpdateBase = {
     id: 5001,
     order_id: orderId,
     order_number: orderNumber,
     name: orderName,
-    shipment_status: "delivered",
     destination: {
       first_name: "John",
       last_name: "Smith",
@@ -140,6 +139,16 @@ async function main() {
     tracking_number: "TRACK123456",
     tracking_url: "https://example.com/track",
     tracking_company: "BlueDart",
+  };
+
+  const fulfillmentsUpdateOutForDelivery = {
+    ...fulfillmentsUpdateBase,
+    shipment_status: "out_for_delivery",
+  };
+
+  const fulfillmentsUpdateDelivered = {
+    ...fulfillmentsUpdateBase,
+    shipment_status: "delivered",
   };
 
   // 5) Order update (topic: orders/updated)
@@ -168,6 +177,11 @@ async function main() {
     },
     {
       topic: "fulfillments/update",
+      payload: fulfillmentsUpdateOutForDelivery,
+      label: "Fulfillment update (out_for_delivery)",
+    },
+    {
+      topic: "fulfillments/update",
       payload: fulfillmentsUpdateDelivered,
       label: "Fulfillment update (delivered)",
     },
@@ -186,7 +200,7 @@ async function main() {
   const shiprocketEndpoint = process.env.SHIPROCKET_ENDPOINT;
   if (!shiprocketEndpoint) {
     console.log(
-      "\n[shiprocket] Skipped: set SHIPROCKET_ENDPOINT to emit picked_up + delivered."
+      "\n[shiprocket] Skipped: set SHIPROCKET_ENDPOINT to emit picked_up + delivered.",
     );
     return;
   }
@@ -217,7 +231,7 @@ async function main() {
   ];
 
   console.log(
-    `\n[shiprocket] Emitting ${shiprocketEvents.length} event(s) to ${shiprocketEndpoint}`
+    `\n[shiprocket] Emitting ${shiprocketEvents.length} event(s) to ${shiprocketEndpoint}`,
   );
 
   for (const ev of shiprocketEvents) {

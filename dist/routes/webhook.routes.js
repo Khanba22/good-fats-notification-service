@@ -73,10 +73,21 @@ router.post("/shopify", async (req, res) => {
     try {
         // First enrich so we can correctly detect delivery
         const payload = enrichPayload(topic, rawPayload);
-        // Detect delivery event to use the new delivered template
-        if (topic === "fulfillments/update" && payload?.shipment_status === "delivered") {
-            topic = "orders/delivered";
-            console.log(`[Shopify] Remapped topic to orders/delivered`);
+        // Remap transit updates to dedicated customer-friendly topics
+        // so templates can be customized per transit state.
+        //
+        // Shopify can surface transit changes via `fulfillments/update` and, depending on setup,
+        // also via order updates where the latest fulfillment carries `shipment_status`.
+        if (topic === "fulfillments/update" || topic === "orders/updated") {
+            const shipmentStatus = String(payload?.shipment_status || "").trim();
+            if (shipmentStatus === "out_for_delivery") {
+                topic = "orders/out_for_delivery";
+                console.log(`[Shopify] Remapped topic to orders/out_for_delivery`);
+            }
+            else if (shipmentStatus === "delivered") {
+                topic = "orders/delivered";
+                console.log(`[Shopify] Remapped topic to orders/delivered`);
+            }
         }
         // 1. Build the message from template + enriched payload
         // (If template is missing/disabled, message.service will alert the admin.)
