@@ -54,6 +54,7 @@ exports.reloadTemplates = reloadTemplates;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const template_service_1 = require("./template.service");
+const notification_service_1 = require("./notification.service");
 // ─── Template Loader ────────────────────────────────────
 const TEMPLATES_PATH = path.resolve(__dirname, "../config/templates.json");
 let templatesCache = null;
@@ -115,10 +116,12 @@ function buildMessageForEvent(topic, payload) {
     const entry = templates[topic];
     if (!entry) {
         console.warn(`[MessageService] No template configured for topic: "${topic}"`);
+        void notification_service_1.notificationService.sendTemplateMissingAlert(topic, payload);
         return null;
     }
     if (!entry.enabled) {
         console.log(`[MessageService] Template for "${topic}" is disabled, skipping`);
+        void notification_service_1.notificationService.sendTemplateMissingAlert(topic, payload);
         return null;
     }
     try {

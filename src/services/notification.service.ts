@@ -14,7 +14,7 @@
  * Those responsibilities live in message.service.ts, template.service.ts, and phone.utils.ts respectively.
  */
 
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
 // Admin phone for error alerts (cleaned format, no +)
@@ -371,6 +371,56 @@ export class NotificationService {
     }
 
     // ─── Admin Error Alerting ────────────────────────────
+
+    private safeStringifyJson(value: any): string {
+        try {
+            return JSON.stringify(value, null, 2);
+        } catch (error: any) {
+            // Best-effort fallback; payload should normally be JSON-serializable
+            try {
+                return JSON.stringify({ error: error?.message || String(error) });
+            } catch {
+                return String(value);
+            }
+        }
+    }
+
+    /**
+     * Sends a developer alert when an event template is missing/disabled.
+     * Sends the FULL payload as a .json attachment to ADMIN_ALERT_PHONE.
+     */
+    public async sendTemplateMissingAlert(topic: string, payload: any): Promise<void> {
+        const now = Date.now();
+        if (now - this.lastAlertTime < ALERT_COOLDOWN_MS) {
+            console.log("[Alert] Skipping template-missing alert (cooldown active)");
+            return;
+        }
+
+        if (!this.isReady()) {
+            console.error("[Alert] Cannot send template-missing alert — client not ready");
+            return;
+        }
+
+        try {
+            this.lastAlertTime = now;
+            const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+            const alertMessage =
+                `⚠️ *Notification Service Alert*\n\n` +
+                `Template missing/disabled for topic: "${topic}"\n` +
+                `Attached: payload.json\n\n` +
+                `🕐 ${timestamp}`;
+
+            const chatId = `${ADMIN_PHONE}@c.us`;
+            const jsonString = this.safeStringifyJson(payload);
+            const base64 = Buffer.from(jsonString, "utf-8").toString("base64");
+            const media = new MessageMedia("application/json", base64, "payload.json");
+
+            await this.client.sendMessage(chatId, media, { caption: alertMessage });
+            console.log(`[Alert] ✅ Template-missing payload sent to admin (${ADMIN_PHONE})`);
+        } catch (alertError: any) {
+            console.error("[Alert] Failed to send template-missing payload:", alertError?.message || alertError);
+        }
+    }
 
     /**
      * Sends an error alert to the admin phone number.

@@ -15,6 +15,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { renderTemplate } from "./template.service";
+import { notificationService } from "./notification.service";
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -94,11 +95,13 @@ export function buildMessageForEvent(topic: string, payload: any): string | null
 
     if (!entry) {
         console.warn(`[MessageService] No template configured for topic: "${topic}"`);
+        void notificationService.sendTemplateMissingAlert(topic, payload);
         return null;
     }
 
     if (!entry.enabled) {
         console.log(`[MessageService] Template for "${topic}" is disabled, skipping`);
+        void notificationService.sendTemplateMissingAlert(topic, payload);
         return null;
     }
 

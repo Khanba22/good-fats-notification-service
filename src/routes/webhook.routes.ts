@@ -13,7 +13,7 @@
 
 import { Router, Request, Response } from "express";
 import { notificationService } from "../services/notification.service";
-import { buildMessageForEvent, isEventEnabled } from "../services/message.service";
+import { buildMessageForEvent } from "../services/message.service";
 import { extractPhone } from "../utils/phone.utils";
 import { schedulePostDeliveryFollowUps, cancelJobsForOrder, getScheduledJobs } from "../services/scheduler.service";
 
@@ -87,16 +87,16 @@ router.post("/shopify", async (req: Request, res: Response) => {
             console.log(`[Shopify] Remapped topic to orders/delivered`);
         }
 
-        // 1. Check if this event is configured and enabled
-        if (!isEventEnabled(topic)) {
-            console.log(`[Shopify] No enabled template for topic: "${topic}" — skipping notification`);
+        // 1. Build the message from template + enriched payload
+        // (If template is missing/disabled, message.service will alert the admin.)
+        const message = buildMessageForEvent(topic, payload);
+        if (!message) {
+            console.warn(`[Shopify] Failed to build message for topic: "${topic}"`);
             res.status(200).send("OK");
             return;
         }
 
-        // 2. Already enriched payload
-
-        // 3. Extract phone number from the payload
+        // 2. Extract phone number from the payload
         const phone = extractPhone(payload);
         if (!phone || phone.trim().length === 0) {
             console.warn(`[Shopify] No phone number found in payload for topic: "${topic}"`);
@@ -105,15 +105,7 @@ router.post("/shopify", async (req: Request, res: Response) => {
             return;
         }
 
-        // 4. Build the message from template + enriched payload
-        const message = buildMessageForEvent(topic, payload);
-        if (!message) {
-            console.warn(`[Shopify] Failed to build message for topic: "${topic}"`);
-            res.status(200).send("OK");
-            return;
-        }
-
-        // 5. Send it
+        // 3. Send it
         console.log(`[Shopify] Sending "${topic}" notification to ${phone}`);
         const sent = await notificationService.sendMessage(phone, message);
 
