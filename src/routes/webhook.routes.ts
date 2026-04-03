@@ -36,16 +36,27 @@ const router = Router();
  * The original payload is NOT mutated — a shallow copy is returned.
  */
 function enrichPayload(topic: string, payload: any): any {
-    // Only enrich order-type events (not fulfillment events which already have top-level tracking)
-    if (!topic.startsWith("orders/")) return payload;
+    // Add a unified top-level first name to avoid complex conditionals in templates
+    const customer_first_name = payload?.destination?.first_name 
+                             || payload?.shipping_address?.first_name 
+                             || payload?.customer?.first_name 
+                             || "";
 
-    const fulfillments = payload?.fulfillments;
-    if (!Array.isArray(fulfillments) || fulfillments.length === 0) return payload;
+    const enriched = {
+        ...payload,
+        customer_first_name
+    };
+
+    // Only enrich order-type events (not fulfillment events which already have top-level tracking)
+    if (!topic.startsWith("orders/")) return enriched;
+
+    const fulfillments = enriched?.fulfillments;
+    if (!Array.isArray(fulfillments) || fulfillments.length === 0) return enriched;
 
     const latest = fulfillments[fulfillments.length - 1];
 
     return {
-        ...payload,
+        ...enriched,
         // Flatten tracking data from the latest fulfillment (only if not already present)
         tracking_number: payload.tracking_number || latest.tracking_number || latest.tracking_numbers?.[0] || "",
         tracking_url: payload.tracking_url || latest.tracking_url || latest.tracking_urls?.[0] || "",
