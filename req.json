@@ -1,32 +1,562 @@
 {
-  "id": 1069928816590467,
-  "order_id": 820982911946154500,
-  "order_number": 1234,
-  "name": "#1234",
-  "status": "success",
-  "shipment_status": "delivered",
-  "tracking_company": "BlueDart",
-  "tracking_number": "TRACK123456",
-  "tracking_url": "https://example.com/track",
-  "destination": {
-    "first_name": "John",
-    "last_name": "Smith",
-    "phone": "+918624909744",
-    "address1": "123 Shipping Street",
+  "id": 7417869500506,
+  "admin_graphql_api_id": "gid://shopify/Order/7417869500506",
+  "app_id": 580111,
+  "browser_ip": "114.79.176.109",
+  "buyer_accepts_marketing": false,
+  "cancel_reason": null,
+  "cancelled_at": null,
+  "cart_token": "hWNAd99rH14vjW9j8QUFEvrA",
+  "checkout_token": "ad5ef2a12700aad21d5157a07eec3fd9",
+  "client_details": {
+    "accept_language": "en-IN",
+    "browser_height": null,
+    "browser_ip": "114.79.176.109",
+    "browser_width": null,
+    "session_hash": null,
+    "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1"
+  },
+  "closed_at": "2026-04-04T15:29:40+05:30",
+  "company": null,
+  "confirmation_number": "GVM8M8YG5",
+  "confirmed": true,
+  "contact_email": null,
+  "created_at": "2026-04-04T15:25:29+05:30",
+  "currency": "INR",
+  "current_shipping_price_set": {
+    "shop_money": {
+      "amount": "0.00",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "0.00",
+      "currency_code": "INR"
+    }
+  },
+  "current_subtotal_price": "1619.10",
+  "current_subtotal_price_set": {
+    "shop_money": {
+      "amount": "1619.10",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "1619.10",
+      "currency_code": "INR"
+    }
+  },
+  "current_total_additional_fees_set": null,
+  "current_total_discounts": "179.90",
+  "current_total_discounts_set": {
+    "shop_money": {
+      "amount": "179.90",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "179.90",
+      "currency_code": "INR"
+    }
+  },
+  "current_total_duties_set": null,
+  "current_total_price": "1619.10",
+  "current_total_price_set": {
+    "shop_money": {
+      "amount": "1619.10",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "1619.10",
+      "currency_code": "INR"
+    }
+  },
+  "current_total_tax": "77.10",
+  "current_total_tax_set": {
+    "shop_money": {
+      "amount": "77.10",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "77.10",
+      "currency_code": "INR"
+    }
+  },
+  "customer_locale": "en-IN",
+  "device_id": null,
+  "discount_codes": [
+    {
+      "code": "goodfats9",
+      "amount": "179.90",
+      "type": "percentage"
+    }
+  ],
+  "duties_included": false,
+  "email": "",
+  "estimated_taxes": false,
+  "financial_status": "paid",
+  "fulfillment_status": "fulfilled",
+  "landing_site": "/",
+  "landing_site_ref": null,
+  "location_id": null,
+  "merchant_business_entity_id": "24405442650",
+  "merchant_of_record_app_id": null,
+  "name": "#1121",
+  "note": null,
+  "note_attributes": [],
+  "number": 121,
+  "order_number": 1121,
+  "order_status_url": "https://thegoodfats.in/67164078170/orders/1ea1f48f7b58690c5c0efda13aea856a/authenticate?key=6538b75191eb0641a3bface0365c14ea",
+  "original_total_additional_fees_set": null,
+  "original_total_duties_set": null,
+  "payment_gateway_names": [
+    "1Razorpay - UPI, Cards, Wallets, NB"
+  ],
+  "phone": "+918624909744",
+  "po_number": null,
+  "presentment_currency": "INR",
+  "processed_at": "2026-04-04T15:25:27+05:30",
+  "reference": null,
+  "referring_site": null,
+  "source_identifier": null,
+  "source_name": "web",
+  "source_url": null,
+  "subtotal_price": "1619.10",
+  "subtotal_price_set": {
+    "shop_money": {
+      "amount": "1619.10",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "1619.10",
+      "currency_code": "INR"
+    }
+  },
+  "tags": "",
+  "tax_exempt": false,
+  "tax_lines": [
+    {
+      "price": "77.10",
+      "rate": 0.05,
+      "title": "IGST",
+      "price_set": {
+        "shop_money": {
+          "amount": "77.10",
+          "currency_code": "INR"
+        },
+        "presentment_money": {
+          "amount": "77.10",
+          "currency_code": "INR"
+        }
+      },
+      "channel_liable": false
+    }
+  ],
+  "taxes_included": true,
+  "test": false,
+  "token": "1ea1f48f7b58690c5c0efda13aea856a",
+  "total_cash_rounding_payment_adjustment_set": {
+    "shop_money": {
+      "amount": "0.00",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "0.00",
+      "currency_code": "INR"
+    }
+  },
+  "total_cash_rounding_refund_adjustment_set": {
+    "shop_money": {
+      "amount": "0.00",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "0.00",
+      "currency_code": "INR"
+    }
+  },
+  "total_discounts": "179.90",
+  "total_discounts_set": {
+    "shop_money": {
+      "amount": "179.90",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "179.90",
+      "currency_code": "INR"
+    }
+  },
+  "total_line_items_price": "1799.00",
+  "total_line_items_price_set": {
+    "shop_money": {
+      "amount": "1799.00",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "1799.00",
+      "currency_code": "INR"
+    }
+  },
+  "total_outstanding": "0.00",
+  "total_price": "1619.10",
+  "total_price_set": {
+    "shop_money": {
+      "amount": "1619.10",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "1619.10",
+      "currency_code": "INR"
+    }
+  },
+  "total_shipping_price_set": {
+    "shop_money": {
+      "amount": "0.00",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "0.00",
+      "currency_code": "INR"
+    }
+  },
+  "total_tax": "77.10",
+  "total_tax_set": {
+    "shop_money": {
+      "amount": "77.10",
+      "currency_code": "INR"
+    },
+    "presentment_money": {
+      "amount": "77.10",
+      "currency_code": "INR"
+    }
+  },
+  "total_tip_received": "0.00",
+  "total_weight": 0,
+  "updated_at": "2026-04-06T16:17:21+05:30",
+  "user_id": null,
+  "billing_address": {
+    "first_name": "Prathamesh",
+    "address1": "Ananya Sant Ramdas Road Sane Guruji Nagar Mulund East",
+    "phone": "8624909744",
     "city": "Mumbai",
+    "zip": "400081",
     "province": "Maharashtra",
     "country": "India",
-    "zip": "400001",
-    "country_code": "IN"
+    "last_name": "Sathe",
+    "address2": "A wing 503 5th floor",
+    "company": null,
+    "latitude": 19.1659249,
+    "longitude": 72.9578785,
+    "name": "Prathamesh Sathe",
+    "country_code": "IN",
+    "province_code": "MH"
   },
   "customer": {
-    "first_name": "John",
-    "last_name": "Smith",
-    "phone": "+918624909744"
+    "id": 9184779567194,
+    "created_at": "2026-04-04T15:25:03+05:30",
+    "updated_at": "2026-04-04T15:25:30+05:30",
+    "first_name": "Prathamesh",
+    "last_name": "Sathe",
+    "state": "disabled",
+    "note": null,
+    "verified_email": true,
+    "multipass_identifier": null,
+    "tax_exempt": false,
+    "email": null,
+    "phone": "+918624909744",
+    "currency": "INR",
+    "tax_exemptions": [],
+    "admin_graphql_api_id": "gid://shopify/Customer/9184779567194",
+    "default_address": {
+      "id": 11917540589658,
+      "customer_id": 9184779567194,
+      "first_name": "Prathamesh",
+      "last_name": "Sathe",
+      "company": null,
+      "address1": "Ananya Sant Ramdas Road Sane Guruji Nagar Mulund East",
+      "address2": "A wing 503 5th floor",
+      "city": "Mumbai",
+      "province": "Maharashtra",
+      "country": "India",
+      "zip": "400081",
+      "phone": "8624909744",
+      "name": "Prathamesh Sathe",
+      "province_code": "MH",
+      "country_code": "IN",
+      "country_name": "India",
+      "default": true
+    }
   },
-  "billing_address": {
-    "first_name": "John",
-    "last_name": "Smith",
-    "phone": "+918624909744"
-  }
+  "discount_applications": [
+    {
+      "target_type": "line_item",
+      "type": "discount_code",
+      "value": "10.0",
+      "value_type": "percentage",
+      "allocation_method": "each",
+      "target_selection": "entitled",
+      "code": "goodfats9"
+    }
+  ],
+  "fulfillments": [
+    {
+      "id": 6971693924442,
+      "admin_graphql_api_id": "gid://shopify/Fulfillment/6971693924442",
+      "created_at": "2026-04-04T15:29:40+05:30",
+      "location_id": 75496521818,
+      "name": "#1121.1",
+      "order_id": 7417869500506,
+      "origin_address": {},
+      "receipt": {},
+      "service": "manual",
+      "shipment_status": "in_transit",
+      "status": "success",
+      "tracking_company": "Delhivery Surface",
+      "tracking_number": "19041900361673",
+      "tracking_numbers": [
+        "19041900361673"
+      ],
+      "tracking_url": "https://shiprocket.co/tracking/19041900361673",
+      "tracking_urls": [
+        "https://shiprocket.co/tracking/19041900361673"
+      ],
+      "updated_at": "2026-04-06T14:39:44+05:30",
+      "line_items": [
+        {
+          "id": 20197985747034,
+          "admin_graphql_api_id": "gid://shopify/LineItem/20197985747034",
+          "attributed_staffs": [],
+          "current_quantity": 1,
+          "fulfillable_quantity": 0,
+          "fulfillment_service": "manual",
+          "fulfillment_status": "fulfilled",
+          "gift_card": false,
+          "grams": 0,
+          "name": "MCT OIL - C8 - 250 ml",
+          "price": "1799.00",
+          "price_set": {
+            "shop_money": {
+              "amount": "1799.00",
+              "currency_code": "INR"
+            },
+            "presentment_money": {
+              "amount": "1799.00",
+              "currency_code": "INR"
+            }
+          },
+          "product_exists": true,
+          "product_id": 7761899094106,
+          "properties": [],
+          "quantity": 1,
+          "requires_shipping": true,
+          "sku": null,
+          "taxable": true,
+          "title": "MCT OIL - C8",
+          "total_discount": "0.00",
+          "total_discount_set": {
+            "shop_money": {
+              "amount": "0.00",
+              "currency_code": "INR"
+            },
+            "presentment_money": {
+              "amount": "0.00",
+              "currency_code": "INR"
+            }
+          },
+          "variant_id": 42929812439130,
+          "variant_inventory_management": "shopify",
+          "variant_title": "250 ml",
+          "vendor": "The Good Fats Store",
+          "tax_lines": [
+            {
+              "channel_liable": false,
+              "price": "77.10",
+              "price_set": {
+                "shop_money": {
+                  "amount": "77.10",
+                  "currency_code": "INR"
+                },
+                "presentment_money": {
+                  "amount": "77.10",
+                  "currency_code": "INR"
+                }
+              },
+              "rate": 0.05,
+              "title": "IGST"
+            }
+          ],
+          "duties": [],
+          "discount_allocations": [
+            {
+              "amount": "179.90",
+              "amount_set": {
+                "shop_money": {
+                  "amount": "179.90",
+                  "currency_code": "INR"
+                },
+                "presentment_money": {
+                  "amount": "179.90",
+                  "currency_code": "INR"
+                }
+              },
+              "discount_application_index": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "line_items": [
+    {
+      "id": 20197985747034,
+      "admin_graphql_api_id": "gid://shopify/LineItem/20197985747034",
+      "attributed_staffs": [],
+      "current_quantity": 1,
+      "fulfillable_quantity": 0,
+      "fulfillment_service": "manual",
+      "fulfillment_status": "fulfilled",
+      "gift_card": false,
+      "grams": 0,
+      "name": "MCT OIL - C8 - 250 ml",
+      "price": "1799.00",
+      "price_set": {
+        "shop_money": {
+          "amount": "1799.00",
+          "currency_code": "INR"
+        },
+        "presentment_money": {
+          "amount": "1799.00",
+          "currency_code": "INR"
+        }
+      },
+      "product_exists": true,
+      "product_id": 7761899094106,
+      "properties": [],
+      "quantity": 1,
+      "requires_shipping": true,
+      "sales_line_item_group_id": null,
+      "sku": null,
+      "taxable": true,
+      "title": "MCT OIL - C8",
+      "total_discount": "0.00",
+      "total_discount_set": {
+        "shop_money": {
+          "amount": "0.00",
+          "currency_code": "INR"
+        },
+        "presentment_money": {
+          "amount": "0.00",
+          "currency_code": "INR"
+        }
+      },
+      "variant_id": 42929812439130,
+      "variant_inventory_management": "shopify",
+      "variant_title": "250 ml",
+      "vendor": "The Good Fats Store",
+      "tax_lines": [
+        {
+          "channel_liable": false,
+          "price": "77.10",
+          "price_set": {
+            "shop_money": {
+              "amount": "77.10",
+              "currency_code": "INR"
+            },
+            "presentment_money": {
+              "amount": "77.10",
+              "currency_code": "INR"
+            }
+          },
+          "rate": 0.05,
+          "title": "IGST"
+        }
+      ],
+      "duties": [],
+      "discount_allocations": [
+        {
+          "amount": "179.90",
+          "amount_set": {
+            "shop_money": {
+              "amount": "179.90",
+              "currency_code": "INR"
+            },
+            "presentment_money": {
+              "amount": "179.90",
+              "currency_code": "INR"
+            }
+          },
+          "discount_application_index": 0
+        }
+      ]
+    }
+  ],
+  "payment_terms": null,
+  "refunds": [],
+  "shipping_address": {
+    "first_name": "Prathamesh",
+    "address1": "Ananya Sant Ramdas Road Sane Guruji Nagar Mulund East",
+    "phone": "8624909744",
+    "city": "Mumbai",
+    "zip": "400081",
+    "province": "Maharashtra",
+    "country": "India",
+    "last_name": "Sathe",
+    "address2": "A wing 503 5th floor",
+    "company": null,
+    "latitude": 19.1659249,
+    "longitude": 72.9578785,
+    "name": "Prathamesh Sathe",
+    "country_code": "IN",
+    "province_code": "MH"
+  },
+  "shipping_lines": [
+    {
+      "id": 6406468665434,
+      "carrier_identifier": null,
+      "code": "Free shipping",
+      "current_discounted_price_set": {
+        "shop_money": {
+          "amount": "0.00",
+          "currency_code": "INR"
+        },
+        "presentment_money": {
+          "amount": "0.00",
+          "currency_code": "INR"
+        }
+      },
+      "discounted_price": "0.00",
+      "discounted_price_set": {
+        "shop_money": {
+          "amount": "0.00",
+          "currency_code": "INR"
+        },
+        "presentment_money": {
+          "amount": "0.00",
+          "currency_code": "INR"
+        }
+      },
+      "is_removed": false,
+      "phone": null,
+      "price": "0.00",
+      "price_set": {
+        "shop_money": {
+          "amount": "0.00",
+          "currency_code": "INR"
+        },
+        "presentment_money": {
+          "amount": "0.00",
+          "currency_code": "INR"
+        }
+      },
+      "requested_fulfillment_service_id": null,
+      "source": "shopify",
+      "title": "Free shipping",
+      "tax_lines": [],
+      "discount_allocations": []
+    }
+  ],
+  "returns": [],
+  "line_item_groups": [],
+  "customer_first_name": "Prathamesh",
+  "tracking_number": "19041900361673",
+  "tracking_url": "https://shiprocket.co/tracking/19041900361673",
+  "tracking_company": "Delhivery Surface",
+  "shipment_status": "delivered"
 }

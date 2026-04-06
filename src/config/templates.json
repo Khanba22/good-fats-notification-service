@@ -10,11 +10,11 @@
   },
   "fulfillments/create": {
     "enabled": true,
-    "template": "Hi {{destination.first_name}},\n\nYour order has been shipped 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\nYou're a few days away from cleaner energy.\n\n— The Good Fats by Askknatural"
+    "template": "Hi {{customer.first_name}},\n\nYour order has been shipped 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\nYou're a few days away from cleaner energy.\n\n— The Good Fats by Askknatural"
   },
   "fulfillments/update": {
     "enabled": true,
-    "template": "Hi {{destination.first_name}},\n\nHere's an update on your shipment 📦\n\n{{#if shipment_status}}Status: {{shipment_status}}\n{{/if}}{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\n— The Good Fats by Askknatural"
+    "template": "Hi {{customer.first_name}},\n\nHere's an update on your shipment 📦\n\n{{#if shipment_status}}Status: {{shipment_status}}\n{{/if}}{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\n— The Good Fats by Askknatural"
   },
   "orders/cancelled": {
     "enabled": true,
@@ -30,11 +30,11 @@
   },
   "orders/delivered": {
     "enabled": true,
-    "template": "Hi {{#if destination.first_name}}{{destination.first_name}}{{else}}{{#if shipping_address.first_name}}{{shipping_address.first_name}}{{else}}{{customer.first_name}}{{/if}}{{/if}},\n\nYour order has been delivered! 🎉\n\nEnjoy cleaner energy.\n\n— The Good Fats by Askknatural"
+    "template": "Hi {{customer.first_name}},\n\nYour order has been delivered! 🎉\n\nEnjoy cleaner energy.\n\n— The Good Fats by Askknatural"
   },
   "orders/out_for_delivery": {
     "enabled": true,
-    "template": "Hi {{#if destination.first_name}}{{destination.first_name}}{{else}}{{#if shipping_address.first_name}}{{shipping_address.first_name}}{{else}}{{customer.first_name}}{{/if}}{{/if}},\n\nGood news — your order is out for delivery today 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\n— The Good Fats by Askknatural"
+    "template": "Hi {{customer.first_name}},\n\nGood news — your order is out for delivery today 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\n— The Good Fats by Askknatural"
   },
   "scheduled/post_delivery_2d": {
     "enabled": true,
