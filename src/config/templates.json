@@ -2,48 +2,32 @@
   "_docs": "Edit these templates freely — no code changes needed. Use {{dot.path}} to reference Shopify payload fields. Missing paths become empty strings. Use {{#if path}}...{{/if}} for conditionals and {{#each array}}...{{/each}} for loops.",
   "orders/create": {
     "enabled": true,
-    "template": "Hi {{customer.first_name}},\n\nYour order for The Good Fats Pure C8 MCT Oil has been successfully placed.\n\nWe're preparing it carefully.\nYou'll be notified once it moves to the next stage.\n\n— The Good Fats by Askknatural"
+    "template": "Hi {{customer_first_name}},\n\nYour order for The Good Fats Pure C8 MCT Oil has been successfully placed.\n\nWe're preparing it carefully.\nYou'll be notified once it moves to the next stage.\n\n— The Good Fats by Askknatural"
   },
   "orders/paid": {
     "enabled": true,
-    "template": "Hi {{customer.first_name}},\n\nPayment received successfully ✅\n\nYour C8 MCT Oil is now being processed for dispatch.\n\n— The Good Fats by Askknatural"
-  },
-  "fulfillments/create": {
-    "enabled": true,
-    "template": "Hi {{customer.first_name}},\n\nYour order has been shipped 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\nYou're a few days away from cleaner energy.\n\n— The Good Fats by Askknatural"
-  },
-  "fulfillments/update": {
-    "enabled": true,
-    "template": "Hi {{customer.first_name}},\n\nHere's an update on your shipment 📦\n\n{{#if shipment_status}}Status: {{shipment_status}}\n{{/if}}{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\n— The Good Fats by Askknatural"
-  },
-  "orders/cancelled": {
-    "enabled": true,
-    "template": "Hi {{customer.first_name}},\n\nYour order {{name}} has been cancelled.\n\n{{#if cancel_reason}}Reason: {{cancel_reason}}\n{{/if}}\nIf you were charged, the refund will reflect in 5-7 business days.\n\nNeed help? Reply to this message or contact our support team.\n\n— The Good Fats by Askknatural"
-  },
-  "orders/partially_fulfilled": {
-    "enabled": true,
-    "template": "Hi {{customer.first_name}},\n\nSome items from your order {{name}} have been shipped 📦\n\nWe'll notify you when the remaining items are on their way.\n\n— The Good Fats by Askknatural"
+    "template": "Hi {{customer_first_name}},\n\nPayment received successfully ✅\n\nYour C8 MCT Oil is now being processed for dispatch.\n\n— The Good Fats by Askknatural"
   },
   "orders/fulfilled": {
     "enabled": true,
-    "template": "Hi {{customer.first_name}},\n\nYour order {{name}} has been Shipped and is on its way 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\nYou're a few days away from cleaner energy.\n\n— The Good Fats by Askknatural"
-  },
-  "orders/delivered": {
-    "enabled": true,
-    "template": "Hi {{customer.first_name}},\n\nYour order has been delivered! 🎉\n\nEnjoy cleaner energy.\n\n— The Good Fats by Askknatural"
+    "template": "Hi {{customer_first_name}},\n\nYour order {{name}} has been shipped and is on its way 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\nYou're a few days away from cleaner energy.\n\n— The Good Fats by Askknatural"
   },
   "orders/out_for_delivery": {
     "enabled": true,
-    "template": "Hi {{customer.first_name}},\n\nGood news — your order is out for delivery today 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\n— The Good Fats by Askknatural"
+    "template": "Hi {{customer_first_name}},\n\nGood news — your order is out for delivery today 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\n— The Good Fats by Askknatural"
+  },
+  "orders/delivered": {
+    "enabled": true,
+    "template": "Hi {{customer_first_name}},\n\nYour order has been delivered! 🎉\n\nEnjoy cleaner energy.\n\n— The Good Fats by Askknatural"
   },
   "scheduled/post_delivery_2d": {
     "enabled": true,
     "_note": "SCHEDULED: This is NOT a Shopify webhook event. Trigger this 2 days after delivery via a cron job or scheduler calling buildMessageForEvent() directly.",
-    "template": "Hi {{customer.first_name}},\n\nHave you started your Pure C8 MCT Oil yet?\n\nStart with 1/2 tablespoon daily, preferably in coffee or your first meal.\nConsistency matters more than quantity.\n\nLet us know how your energy feels.\n\n— The Good Fats by Askknatural"
+    "template": "Hi {{customer_first_name}},\n\nHave you started your Pure C8 MCT Oil yet?\n\nStart with 1/2 tablespoon daily, preferably in coffee or your first meal.\nConsistency matters more than quantity.\n\nLet us know how your energy feels.\n\n— The Good Fats by Askknatural"
   },
   "scheduled/reorder_reminder_13d": {
     "enabled": true,
     "_note": "SCHEDULED: This is NOT a Shopify webhook event. Trigger this 13-15 days after delivery via a cron job or scheduler calling buildMessageForEvent() directly.",
-    "template": "Hi {{customer.first_name}},\n\nBy now, you would have felt the difference in clean energy and cravings.\n\nIf you're using it consistently, your bottle may be halfway through.\n\nDon't break momentum.\nReorder before it finishes.\n\n— The Good Fats by Askknatural"
+    "template": "Hi {{customer_first_name}},\n\nBy now, you would have felt the difference in clean energy and cravings.\n\nIf you're using it consistently, your bottle may be halfway through.\n\nDon't break momentum.\nReorder before it finishes.\n\n— The Good Fats by Askknatural"
   }
 }

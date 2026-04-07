@@ -34,21 +34,119 @@ const router = (0, express_1.Router)();
  * The original payload is NOT mutated — a shallow copy is returned.
  */
 function enrichPayload(topic, payload) {
+    // Add a unified top-level first name to avoid complex conditionals in templates
+    const customer_first_name = payload?.destination?.first_name
+        || payload?.shipping_address?.first_name
+        || payload?.customer?.first_name
+        || "";
+    const enriched = {
+        ...payload,
+        customer_first_name
+    };
     // Only enrich order-type events (not fulfillment events which already have top-level tracking)
     if (!topic.startsWith("orders/"))
-        return payload;
-    const fulfillments = payload?.fulfillments;
+        return enriched;
+    const fulfillments = enriched?.fulfillments;
     if (!Array.isArray(fulfillments) || fulfillments.length === 0)
-        return payload;
+        return enriched;
     const latest = fulfillments[fulfillments.length - 1];
     return {
-        ...payload,
+        ...enriched,
         // Flatten tracking data from the latest fulfillment (only if not already present)
         tracking_number: payload.tracking_number || latest.tracking_number || latest.tracking_numbers?.[0] || "",
         tracking_url: payload.tracking_url || latest.tracking_url || latest.tracking_urls?.[0] || "",
         tracking_company: payload.tracking_company || latest.tracking_company || "",
         shipment_status: payload.shipment_status || latest.shipment_status || "",
     };
+}
+// ==========================================
+// Debug — Per-Topic Key Extraction & Forward
+// ==========================================
+const MISSING = "Necessary key not found Can break";
+/**
+ * Per-topic map of the exact payload keys each webhook uses.
+ * Template placeholders, phone extraction, enrichment, and scheduler fields.
+ */
+const TOPIC_KEYS = {
+    "orders/create": [
+        "customer_first_name",
+        "phone",
+    ],
+    "orders/paid": [
+        "customer_first_name",
+        "phone",
+    ],
+    "orders/fulfilled": [
+        "customer_first_name",
+        "name",
+        "tracking_number",
+        "tracking_url",
+        "phone",
+    ],
+    "orders/out_for_delivery": [
+        "customer_first_name",
+        "tracking_number",
+        "tracking_url",
+        "shipment_status",
+        "phone",
+    ],
+    "orders/delivered": [
+        "customer_first_name",
+        "shipment_status",
+        "order_number",
+        "name",
+        "id",
+        "phone",
+    ],
+    "scheduled/post_delivery_2d": [
+        "customer_first_name",
+    ],
+    "scheduled/reorder_reminder_13d": [
+        "customer_first_name",
+    ],
+};
+/**
+ * Extracts only the keys that a specific topic uses from the enriched payload.
+ * Missing keys are flagged with a warning value so the developer can spot issues.
+ */
+function prunePayloadForTopic(topic, payload, resolvedPhone) {
+    const keys = TOPIC_KEYS[topic];
+    if (!keys)
+        return { _warning: `No key map defined for topic "${topic}"` };
+    const pruned = {};
+    for (const key of keys) {
+        if (key === "phone") {
+            // Phone is resolved by extractPhone(), show what was actually resolved
+            pruned.phone = resolvedPhone || MISSING;
+            continue;
+        }
+        const value = payload?.[key];
+        if (value !== undefined && value !== null && value !== "") {
+            pruned[key] = value;
+        }
+        else {
+            pruned[key] = MISSING;
+        }
+    }
+    return pruned;
+}
+/**
+ * Fire-and-forget: sends the rendered message + topic-specific pruned JSON
+ * to the developer phone. Failures are logged but never block the webhook response.
+ */
+async function sendDebugToAdmin(topic, message, payload, resolvedPhone) {
+    try {
+        const pruned = prunePayloadForTopic(topic, payload, resolvedPhone);
+        const debugMsg = `${message}\n\n` +
+            `*JSON — ${topic}*\n` +
+            `${JSON.stringify(pruned, null, 2)}`;
+        const adminPhone = process.env.ADMIN_ALERT_PHONE || "918624909744";
+        await notification_service_1.notificationService.sendMessage(adminPhone, debugMsg);
+        console.log(`[Debug] 📩 Debug copy sent to admin for "${topic}"`);
+    }
+    catch (err) {
+        console.error(`[Debug] Failed to send debug copy:`, err?.message || err);
+    }
 }
 // ==========================================
 // Shopify Webhook — Universal Handler
@@ -73,11 +171,10 @@ router.post("/shopify", async (req, res) => {
     try {
         // First enrich so we can correctly detect delivery
         const payload = enrichPayload(topic, rawPayload);
-        // Remap transit updates to dedicated customer-friendly topics
-        // so templates can be customized per transit state.
-        //
-        // Shopify can surface transit changes via `fulfillments/update` and, depending on setup,
-        // also via order updates where the latest fulfillment carries `shipment_status`.
+        // ── Remap transit updates ──────────────────────────
+        // fulfillments/update and orders/updated carry shipment_status.
+        // We only care about "out_for_delivery" and "delivered".
+        // Everything else (in_transit, label_printed, etc.) is silently ignored.
         if (topic === "fulfillments/update" || topic === "orders/updated") {
             const shipmentStatus = String(payload?.shipment_status || "").trim();
             if (shipmentStatus === "out_for_delivery") {
@@ -88,9 +185,21 @@ router.post("/shopify", async (req, res) => {
                 topic = "orders/delivered";
                 console.log(`[Shopify] Remapped topic to orders/delivered`);
             }
+            else {
+                // Ignore all other fulfillment status updates (in_transit, label_printed, etc.)
+                console.log(`[Shopify] Ignoring fulfillment update with status: "${shipmentStatus}"`);
+                res.status(200).send("OK");
+                return;
+            }
+        }
+        // ── Only process events we have templates for ─────
+        // Silently ignore events we don't handle (fulfillments/create, orders/cancelled, etc.)
+        if (!(0, message_service_1.isEventEnabled)(topic)) {
+            console.log(`[Shopify] No template for "${topic}" — ignoring`);
+            res.status(200).send("OK");
+            return;
         }
         // 1. Build the message from template + enriched payload
-        // (If template is missing/disabled, message.service will alert the admin.)
         const message = (0, message_service_1.buildMessageForEvent)(topic, payload);
         if (!message) {
             console.warn(`[Shopify] Failed to build message for topic: "${topic}"`);
@@ -101,7 +210,6 @@ router.post("/shopify", async (req, res) => {
         const phone = (0, phone_utils_1.extractPhone)(payload);
         if (!phone || phone.trim().length === 0) {
             console.warn(`[Shopify] No phone number found in payload for topic: "${topic}"`);
-            console.warn(`[Shopify] Checked paths: billing_address.phone, shipping_address.phone, customer.default_address.phone, customer.phone, destination.phone`);
             res.status(200).send("OK");
             return;
         }
@@ -110,20 +218,12 @@ router.post("/shopify", async (req, res) => {
         const sent = await notification_service_1.notificationService.sendMessage(phone, message);
         if (sent) {
             console.log(`[Shopify] ✅ "${topic}" notification sent successfully`);
-            // 6. Schedule follow-up notifications for delivery events
+            // Send debug copy to developer (fire-and-forget)
+            void sendDebugToAdmin(topic, message, payload, phone);
+            // Schedule follow-up notifications for delivery events
             if (topic === "orders/delivered") {
                 const orderId = payload?.order_number || payload?.name || payload?.id;
                 await (0, scheduler_service_1.schedulePostDeliveryFollowUps)(phone, payload, orderId);
-            }
-            // 7. Cancel scheduled follow-ups if the order is cancelled
-            if (topic === "orders/cancelled") {
-                const orderId = payload?.order_number || payload?.name || payload?.id;
-                if (orderId) {
-                    const cancelled = await (0, scheduler_service_1.cancelJobsForOrder)(orderId);
-                    if (cancelled > 0) {
-                        console.log(`[Shopify] 🚫 Cancelled ${cancelled} scheduled follow-up(s) for cancelled order ${orderId}`);
-                    }
-                }
             }
         }
         else {
