@@ -17,6 +17,7 @@ const notification_service_1 = require("../services/notification.service");
 const message_service_1 = require("../services/message.service");
 const phone_utils_1 = require("../utils/phone.utils");
 const scheduler_service_1 = require("../services/scheduler.service");
+const webhook_dedupe_service_1 = require("../services/webhook-dedupe.service");
 const router = (0, express_1.Router)();
 // ==========================================
 // Payload Enrichment
@@ -196,6 +197,11 @@ router.post("/shopify", async (req, res) => {
         // Silently ignore events we don't handle (fulfillments/create, orders/cancelled, etc.)
         if (!(0, message_service_1.isEventEnabled)(topic)) {
             console.log(`[Shopify] No template for "${topic}" — ignoring`);
+            res.status(200).send("OK");
+            return;
+        }
+        if (webhook_dedupe_service_1.webhookDedupeService.shouldBlock(topic, payload)) {
+            console.log(`[Shopify] Duplicate "${topic}" webhook ignored.`);
             res.status(200).send("OK");
             return;
         }

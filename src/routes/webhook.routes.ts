@@ -16,6 +16,7 @@ import { notificationService } from "../services/notification.service";
 import { buildMessageForEvent, isEventEnabled } from "../services/message.service";
 import { extractPhone } from "../utils/phone.utils";
 import { schedulePostDeliveryFollowUps, getScheduledJobs } from "../services/scheduler.service";
+import { webhookDedupeService } from "../services/webhook-dedupe.service";
 
 const router = Router();
 
@@ -213,6 +214,12 @@ router.post("/shopify", async (req: Request, res: Response) => {
         // Silently ignore events we don't handle (fulfillments/create, orders/cancelled, etc.)
         if (!isEventEnabled(topic)) {
             console.log(`[Shopify] No template for "${topic}" — ignoring`);
+            res.status(200).send("OK");
+            return;
+        }
+
+        if (webhookDedupeService.shouldBlock(topic, payload)) {
+            console.log(`[Shopify] Duplicate "${topic}" webhook ignored.`);
             res.status(200).send("OK");
             return;
         }
