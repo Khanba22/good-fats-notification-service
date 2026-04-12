@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.webhookDedupeService = void 0;
+const phone_utils_1 = require("../utils/phone.utils");
 const DEDUPE_WINDOW_MS = 3 * 60 * 1000;
 class WebhookDedupeService {
     entries = new Map();
@@ -12,11 +13,13 @@ class WebhookDedupeService {
         if (!this.supportedTopics.has(topic)) {
             return false;
         }
-        const dedupeKey = this.buildKey(topic, payload);
-        if (!dedupeKey) {
-            console.warn(`[Dedupe] Skipping dedupe for "${topic}" because no stable key could be built.`);
+        const raw = (0, phone_utils_1.extractPhone)(payload);
+        const phone = (0, phone_utils_1.cleanPhoneNumber)(raw);
+        if (!phone) {
+            console.warn(`[Dedupe] Skipping dedupe for "${topic}" — no phone on payload.`);
             return false;
         }
+        const dedupeKey = `${topic}:${phone}`;
         const existing = this.entries.get(dedupeKey);
         if (existing) {
             clearTimeout(existing.timeout);
@@ -35,22 +38,6 @@ class WebhookDedupeService {
             console.log(`[Dedupe] Expired "${topic}" webhook key "${key}".`);
         }, DEDUPE_WINDOW_MS);
         return { timeout };
-    }
-    buildKey(topic, payload) {
-        const stableRef = this.firstNonEmpty(payload?.order_number, payload?.order_id, payload?.id, payload?.name, payload?.tracking_number, payload?.awb, payload?.awb_code, payload?.shipment_id, payload?.phone, payload?.customer?.phone, payload?.shipping_address?.phone, payload?.destination?.phone);
-        if (!stableRef) {
-            return null;
-        }
-        return `${topic}:${stableRef}`;
-    }
-    firstNonEmpty(...values) {
-        for (const value of values) {
-            const normalized = String(value ?? "").trim();
-            if (normalized.length > 0) {
-                return normalized;
-            }
-        }
-        return "";
     }
 }
 exports.webhookDedupeService = new WebhookDedupeService();

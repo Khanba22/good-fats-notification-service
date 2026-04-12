@@ -1,3 +1,5 @@
+import { cleanPhoneNumber, extractPhone } from "../utils/phone.utils";
+
 const DEDUPE_WINDOW_MS = 3 * 60 * 1000;
 
 type DedupeTopic = "orders/out_for_delivery" | "orders/delivered";
@@ -18,11 +20,14 @@ class WebhookDedupeService {
             return false;
         }
 
-        const dedupeKey = this.buildKey(topic as DedupeTopic, payload);
-        if (!dedupeKey) {
-            console.warn(`[Dedupe] Skipping dedupe for "${topic}" because no stable key could be built.`);
+        const raw = extractPhone(payload);
+        const phone = cleanPhoneNumber(raw);
+        if (!phone) {
+            console.warn(`[Dedupe] Skipping dedupe for "${topic}" — no phone on payload.`);
             return false;
         }
+
+        const dedupeKey = `${topic}:${phone}`;
 
         const existing = this.entries.get(dedupeKey);
         if (existing) {
@@ -48,40 +53,6 @@ class WebhookDedupeService {
         }, DEDUPE_WINDOW_MS);
 
         return { timeout };
-    }
-
-    private buildKey(topic: DedupeTopic, payload: any): string | null {
-        const stableRef = this.firstNonEmpty(
-            payload?.order_number,
-            payload?.order_id,
-            payload?.id,
-            payload?.name,
-            payload?.tracking_number,
-            payload?.awb,
-            payload?.awb_code,
-            payload?.shipment_id,
-            payload?.phone,
-            payload?.customer?.phone,
-            payload?.shipping_address?.phone,
-            payload?.destination?.phone
-        );
-
-        if (!stableRef) {
-            return null;
-        }
-
-        return `${topic}:${stableRef}`;
-    }
-
-    private firstNonEmpty(...values: Array<unknown>): string {
-        for (const value of values) {
-            const normalized = String(value ?? "").trim();
-            if (normalized.length > 0) {
-                return normalized;
-            }
-        }
-
-        return "";
     }
 }
 
