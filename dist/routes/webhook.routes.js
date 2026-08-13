@@ -24,15 +24,6 @@ const router = (0, express_1.Router)();
 // ==========================================
 /**
  * Enriches an order-type payload by flattening useful nested data to the top level.
- *
- * Problem: In order events (orders/fulfilled, orders/partially_fulfilled), tracking info
- * lives deep inside `fulfillments[last].tracking_number`. But in fulfillment events
- * (fulfillments/create), it's at the top level. Templates shouldn't need to care about this.
- *
- * Solution: For order-type payloads, copy the last fulfillment's tracking data to the top level
- * so `{{tracking_number}}` works in templates for both order and fulfillment events.
- *
- * The original payload is NOT mutated — a shallow copy is returned.
  */
 function enrichPayload(topic, payload) {
     // Add a unified top-level first name to avoid complex conditionals in templates
@@ -40,9 +31,23 @@ function enrichPayload(topic, payload) {
         || payload?.shipping_address?.first_name
         || payload?.customer?.first_name
         || "";
+    const tracking_url = payload.tracking_url
+        || payload.fulfillments?.[payload.fulfillments?.length - 1]?.tracking_url
+        || payload.fulfillments?.[payload.fulfillments?.length - 1]?.tracking_urls?.[0]
+        || "";
+    const purchase_link = payload.purchase_link
+        || payload.purchase_url
+        || payload.order_status_url
+        || "";
     const enriched = {
         ...payload,
-        customer_first_name
+        customer_first_name,
+        tracking_url,
+        tracking_link: tracking_url,
+        "Tracking Link": tracking_url,
+        purchase_link,
+        purchase_url: purchase_link,
+        "Purchase Link": purchase_link,
     };
     // Only enrich order-type events (not fulfillment events which already have top-level tracking)
     if (!topic.startsWith("orders/"))
@@ -51,11 +56,15 @@ function enrichPayload(topic, payload) {
     if (!Array.isArray(fulfillments) || fulfillments.length === 0)
         return enriched;
     const latest = fulfillments[fulfillments.length - 1];
+    const finalTracking = payload.tracking_number || latest.tracking_number || latest.tracking_numbers?.[0] || "";
+    const finalTrackingUrl = payload.tracking_url || latest.tracking_url || latest.tracking_urls?.[0] || tracking_url;
     return {
         ...enriched,
         // Flatten tracking data from the latest fulfillment (only if not already present)
-        tracking_number: payload.tracking_number || latest.tracking_number || latest.tracking_numbers?.[0] || "",
-        tracking_url: payload.tracking_url || latest.tracking_url || latest.tracking_urls?.[0] || "",
+        tracking_number: finalTracking,
+        tracking_url: finalTrackingUrl,
+        tracking_link: finalTrackingUrl,
+        "Tracking Link": finalTrackingUrl,
         tracking_company: payload.tracking_company || latest.tracking_company || "",
         shipment_status: payload.shipment_status || latest.shipment_status || "",
     };
@@ -82,12 +91,16 @@ const TOPIC_KEYS = {
         "name",
         "tracking_number",
         "tracking_url",
+        "tracking_link",
+        "Tracking Link",
         "phone",
     ],
     "orders/out_for_delivery": [
         "customer_first_name",
         "tracking_number",
         "tracking_url",
+        "tracking_link",
+        "Tracking Link",
         "shipment_status",
         "phone",
     ],
@@ -99,11 +112,13 @@ const TOPIC_KEYS = {
         "id",
         "phone",
     ],
-    "scheduled/post_delivery_2d": [
+    "scheduled/post_delivery_3d": [
         "customer_first_name",
     ],
-    "scheduled/reorder_reminder_13d": [
+    "scheduled/reorder_reminder_25d": [
         "customer_first_name",
+        "purchase_link",
+        "Purchase Link",
     ],
 };
 /**
@@ -221,7 +236,7 @@ router.post("/shopify", async (req, res) => {
         }
         // 3. Send it
         console.log(`[Shopify] Sending "${topic}" notification to ${phone}`);
-        const sent = await notification_service_1.notificationService.sendMessage(phone, message);
+        const sent = await notification_service_1.notificationService.sendMessage(phone, message, payload);
         if (sent) {
             console.log(`[Shopify] ✅ "${topic}" notification sent successfully`);
             // Send debug copy to developer (fire-and-forget)

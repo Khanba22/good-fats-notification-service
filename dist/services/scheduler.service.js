@@ -54,14 +54,14 @@ const notification_service_1 = require("./notification.service");
 const message_service_1 = require("./message.service");
 const FOLLOW_UPS = [
     {
-        topic: "scheduled/post_delivery_2d",
-        delayDays: 2,
-        label: "Post-delivery usage tips (2 days)",
+        topic: "scheduled/post_delivery_3d",
+        delayDays: 3,
+        label: "Post-delivery feedback (3 days)",
     },
     {
-        topic: "scheduled/reorder_reminder_13d",
-        delayDays: 13,
-        label: "Reorder reminder (13 days)",
+        topic: "scheduled/reorder_reminder_25d",
+        delayDays: 25,
+        label: "Reorder reminder (25 days)",
     },
 ];
 const jobsById = new Map();
@@ -104,7 +104,7 @@ async function schedulePostDeliveryFollowUps(phone, payload, orderId) {
         }
     }
     if (scheduledCount === FOLLOW_UPS.length) {
-        console.log(`[Scheduler] One-time cron jobs scheduled for 2-day and 13-day follow-ups — customer "${customerName}", phone ${phone} (order ${orderRef})`);
+        console.log(`[Scheduler] One-time cron jobs scheduled for 3-day and 25-day follow-ups — customer "${customerName}", phone ${phone} (order ${orderRef})`);
     }
     else if (scheduledCount > 0) {
         console.warn(`[Scheduler] Only ${scheduledCount}/${FOLLOW_UPS.length} follow-up job(s) were scheduled for customer "${customerName}", phone ${phone} (order ${orderRef})`);
@@ -182,7 +182,7 @@ async function runScheduledFollowUp(jobId, phone, topic, payload, label) {
             console.warn(`[Scheduler] ⚠️ No message rendered for topic "${topic}" — template may be disabled or missing`);
             return;
         }
-        const sent = await notification_service_1.notificationService.sendMessage(phone, message);
+        const sent = await notification_service_1.notificationService.sendMessage(phone, message, payload);
         if (sent) {
             console.log(`[Scheduler] ✅ Scheduled follow-up sent: ${jobId}`);
         }

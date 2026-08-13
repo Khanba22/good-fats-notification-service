@@ -283,7 +283,15 @@ class NotificationService {
      * @param message - The fully rendered message string (built by message.service)
      * @returns true if sent successfully
      */
-    async sendMessage(toPhone, message) {
+    /**
+     * Sends a pre-built message string to a phone number via WhatsApp.
+     *
+     * @param toPhone - Raw phone number string (will be cleaned)
+     * @param message - The fully rendered message string (built by message.service)
+     * @param payload - Optional incoming JSON payload (attached to admin alerts on failure)
+     * @returns true if sent successfully
+     */
+    async sendMessage(toPhone, message, payload) {
         try {
             if (!this.isReady()) {
                 console.error("[WhatsApp] Client is not ready. Cannot send message.");
@@ -301,8 +309,9 @@ class NotificationService {
             const chatId = this.formatPhoneNumber(cleanPhone);
             console.log(`[WhatsApp] Sending message to ${chatId}`);
             const result = await this.client.sendMessage(chatId, message);
-            console.log(`[WhatsApp] ✅ Message sent to ${chatId}, ID: ${result.id._serialized}`);
-            this.logNotification(true, { messageId: result.id._serialized, to: chatId });
+            const messageId = result?.id?._serialized || result?.id || "sent";
+            console.log(`[WhatsApp] ✅ Message sent to ${chatId}, ID: ${messageId}`);
+            this.logNotification(true, { messageId, to: chatId });
             return true;
         }
         catch (error) {
@@ -316,8 +325,8 @@ class NotificationService {
                 phone: toPhone,
                 messageLength: message?.length || 0
             });
-            // Alert admin about the failure
-            this.sendErrorAlert(`🔴 Message Send Failed\n\nTo: ${toPhone}\nError: ${errorMessage}\nMsg Length: ${message?.length || 0}`);
+            // Alert admin about the failure with attached payload if available
+            this.sendErrorAlert(`🔴 Message Send Failed\n\nTo: ${toPhone}\nError: ${errorMessage}\nMsg Length: ${message?.length || 0}`, payload);
             return false;
         }
     }
@@ -376,9 +385,10 @@ class NotificationService {
     }
     /**
      * Sends an error alert to the admin phone number.
+     * Attaches payload.json when provided.
      * Throttled to avoid spamming — max 1 alert per minute.
      */
-    async sendErrorAlert(errorText) {
+    async sendErrorAlert(errorText, payload) {
         const now = Date.now();
         if (now - this.lastAlertTime < ALERT_COOLDOWN_MS) {
             console.log("[Alert] Skipping admin alert (cooldown active)");
@@ -391,14 +401,33 @@ class NotificationService {
         try {
             this.lastAlertTime = now;
             const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-            const alertMessage = `⚠️ *Notification Service Alert*\n\n${errorText}\n\n🕐 ${timestamp}`;
+            const alertMessage = `⚠️ *Notification Service Alert*\n\n${errorText}` +
+                (payload ? `\n\nAttached: payload.json` : ``) +
+                `\n\n🕐 ${timestamp}`;
             const chatId = `${ADMIN_PHONE}@c.us`;
-            await this.client.sendMessage(chatId, alertMessage);
+            if (payload) {
+                const jsonString = this.safeStringifyJson(payload);
+                const base64 = Buffer.from(jsonString, "utf-8").toString("base64");
+                const media = new MessageMedia("application/json", base64, "payload.json");
+                await this.client.sendMessage(chatId, media, { caption: alertMessage });
+            }
+            else {
+                await this.client.sendMessage(chatId, alertMessage);
+            }
             console.log(`[Alert] ✅ Error alert sent to admin (${ADMIN_PHONE})`);
         }
         catch (alertError) {
-            // Don't recurse — just log if even the alert fails
-            console.error("[Alert] Failed to send admin alert:", alertError?.message || alertError);
+            // If sending with attachment failed, fall back to text-only alert
+            try {
+                const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+                const fallbackMsg = `⚠️ *Notification Service Alert*\n\n${errorText}\n\n🕐 ${timestamp}`;
+                const chatId = `${ADMIN_PHONE}@c.us`;
+                await this.client.sendMessage(chatId, fallbackMsg);
+                console.log(`[Alert] ✅ Fallback text error alert sent to admin (${ADMIN_PHONE})`);
+            }
+            catch (fallbackError) {
+                console.error("[Alert] Failed to send admin alert:", fallbackError?.message || fallbackError);
+            }
         }
     }
 }

@@ -43,7 +43,12 @@ const FORMATTERS: Record<string, Formatter> = {
 export function resolvePath(data: any, path: string): any {
     if (!data || !path) return undefined;
 
-    const segments = path.split(".");
+    const trimmed = path.trim();
+    if (typeof data === "object" && data !== null && trimmed in data) {
+        return data[trimmed];
+    }
+
+    const segments = trimmed.split(".");
     let current: any = data;
 
     for (const segment of segments) {
@@ -95,7 +100,7 @@ function toDisplayString(value: any): string {
  *   - Nested {{placeholders}} that don't start with "this." resolve against the root data
  */
 function processLoops(template: string, data: any): string {
-    const loopRegex = /\{\{#each\s+([\w.]+)\}\}([\s\S]*?)\{\{\/each\}\}/g;
+    const loopRegex = /\{\{#each\s+([\w.\s]+)\}\}([\s\S]*?)\{\{\/each\}\}/g;
 
     return template.replace(loopRegex, (_match, arrayPath: string, body: string) => {
         const array = resolvePath(data, arrayPath.trim());
@@ -112,7 +117,7 @@ function processLoops(template: string, data: any): string {
             rendered = rendered.replace(/\{\{@number\}\}/g, String(index + 1));
 
             // Replace {{this.path}} with item path resolution
-            rendered = rendered.replace(/\{\{this\.([\w.]+?)(?:\|([\w]+))?\}\}/g,
+            rendered = rendered.replace(/\{\{this\.([\w.\s]+?)(?:\|([\w]+))?\}\}/g,
                 (_m: string, itemPath: string, formatter?: string) => {
                     const resolved = resolvePath(item, itemPath.trim());
                     let display = toDisplayString(resolved);
@@ -124,7 +129,7 @@ function processLoops(template: string, data: any): string {
             );
 
             // Replace remaining {{path}} with root data resolution
-            rendered = rendered.replace(/\{\{(?!#|\/|@)([\w.]+?)(?:\|([\w]+))?\}\}/g,
+            rendered = rendered.replace(/\{\{(?!#|\/|@)([\w.\s]+?)(?:\|([\w]+))?\}\}/g,
                 (_m: string, rootPath: string, formatter?: string) => {
                     const resolved = resolvePath(data, rootPath.trim());
                     let display = toDisplayString(resolved);
@@ -145,7 +150,7 @@ function processLoops(template: string, data: any): string {
  * The block is rendered if the resolved path is truthy (not null, undefined, "", 0, false, or empty array).
  */
 function processConditionals(template: string, data: any): string {
-    const ifElseRegex = /\{\{#if\s+([\w.]+)\}\}([\s\S]*?)\{\{else\}\}([\s\S]*?)\{\{\/if\}\}/g;
+    const ifElseRegex = /\{\{#if\s+([\w.\s]+)\}\}([\s\S]*?)\{\{else\}\}([\s\S]*?)\{\{\/if\}\}/g;
     let result = template.replace(ifElseRegex, (_match, path: string, ifBlock: string, elseBlock: string) => {
         const value = resolvePath(data, path.trim());
         const isTruthy = value !== null && value !== undefined && value !== "" && value !== 0 && value !== false
@@ -153,7 +158,7 @@ function processConditionals(template: string, data: any): string {
         return isTruthy ? ifBlock : elseBlock;
     });
 
-    const ifRegex = /\{\{#if\s+([\w.]+)\}\}([\s\S]*?)\{\{\/if\}\}/g;
+    const ifRegex = /\{\{#if\s+([\w.\s]+)\}\}([\s\S]*?)\{\{\/if\}\}/g;
     result = result.replace(ifRegex, (_match, path: string, block: string) => {
         const value = resolvePath(data, path.trim());
         const isTruthy = value !== null && value !== undefined && value !== "" && value !== 0 && value !== false
@@ -168,7 +173,7 @@ function processConditionals(template: string, data: any): string {
  * Replaces simple {{path}} and {{path|formatter}} placeholders with resolved values.
  */
 function processPlaceholders(template: string, data: any): string {
-    return template.replace(/\{\{(?!#|\/|@)([\w.]+?)(?:\|([\w]+))?\}\}/g,
+    return template.replace(/\{\{(?!#|\/|@)([\w.\s]+?)(?:\|([\w]+))?\}\}/g,
         (_match, path: string, formatter?: string) => {
             const resolved = resolvePath(data, path.trim());
             let display = toDisplayString(resolved);

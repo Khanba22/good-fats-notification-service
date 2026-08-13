@@ -2,32 +2,32 @@
   "_docs": "Edit these templates freely — no code changes needed. Use {{dot.path}} to reference Shopify payload fields. Missing paths become empty strings. Use {{#if path}}...{{/if}} for conditionals and {{#each array}}...{{/each}} for loops.",
   "orders/create": {
     "enabled": true,
-    "template": "Hi {{customer_first_name}},\n\nYour order for The Good Fats Pure C8 MCT Oil has been successfully placed.\n\nWe're preparing it carefully.\nYou'll be notified once it moves to the next stage.\n\n— The Good Fats by Askknatural"
+    "template": "Order placed successfully! 🤎\n\nYour **RE-CYCLE PCOS Hot Chocolate Blend** is confirmed.\n\nWe’re getting your order ready and packing it with lots of care & love. 📦✨\nYou’ll receive an update as soon as it’s shipped.\n\nCan’t wait for you to try your first cup! ☕🤎\n\nTeam Askknatural"
   },
   "orders/paid": {
     "enabled": true,
-    "template": "Hi {{customer_first_name}},\n\nPayment received successfully ✅\n\nYour C8 MCT Oil is now being processed for dispatch.\n\n— The Good Fats by Askknatural"
+    "template": "Order placed successfully! 🤎\n\nYour **RE-CYCLE PCOS Hot Chocolate Blend** is confirmed.\n\nWe’re getting your order ready and packing it with lots of care & love. 📦✨\nYou’ll receive an update as soon as it’s shipped.\n\nCan’t wait for you to try your first cup! ☕🤎\n\nTeam Askknatural"
   },
   "orders/fulfilled": {
     "enabled": true,
-    "template": "Hi {{customer_first_name}},\n\nYour order {{name}} has been shipped and is on its way 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\nYou're a few days away from cleaner energy.\n\n— The Good Fats by Askknatural"
+    "template": "Your RE-CYCLE is on the way! 🤎📦\n\nYour **PCOS Hot Chocolate Blend** has been shipped and is making its way to you. ☕✨\n\nTrack your order here:\n{{Tracking Link}}\n\nYour delicious cup of RE-CYCLE will be with you soon! 🤎\n\n Team Askknatural"
   },
   "orders/out_for_delivery": {
     "enabled": true,
-    "template": "Hi {{customer_first_name}},\n\nGood news — your order is out for delivery today 🚚\n\n{{#if tracking_number}}Tracking ID: {{tracking_number}}\n{{/if}}{{#if tracking_url}}Track here: {{tracking_url}}\n{{/if}}\n— The Good Fats by Askknatural"
+    "template": "Your RE-CYCLE is on the way! 🤎📦\n\nYour **PCOS Hot Chocolate Blend** has been shipped and is making its way to you. ☕✨\n\nTrack your order here:\n{{Tracking Link}}\n\nYour delicious cup of RE-CYCLE will be with you soon! 🤎\n\n Team Askknatural"
   },
   "orders/delivered": {
     "enabled": true,
-    "template": "Hi {{customer_first_name}},\n\nYour order has been delivered! 🎉\n\nEnjoy cleaner energy.\n\n— The Good Fats by Askknatural"
+    "template": "Your RE-CYCLE has arrived! 🤎☕✨\n\nYour **PCOS Hot Chocolate Blend** has been successfully delivered. 📦\n\n**How to enjoy your RE-CYCLE:**\nMix **1 sachet** in **100 ml of hot water or milk**, stir well, and enjoy it **before bedtime**. ☕🌙🤎\n\nWe’d love to know how you like the taste once you try it.\n\nTeam Askknatural"
   },
-  "scheduled/post_delivery_2d": {
+  "scheduled/post_delivery_3d": {
     "enabled": true,
-    "_note": "SCHEDULED: This is NOT a Shopify webhook event. Trigger this 2 days after delivery via a cron job or scheduler calling buildMessageForEvent() directly.",
-    "template": "Hi {{customer_first_name}},\n\nHave you started your Pure C8 MCT Oil yet?\n\nStart with 1/2 tablespoon daily, preferably in coffee or your first meal.\nConsistency matters more than quantity.\n\nLet us know how your energy feels.\n\n— The Good Fats by Askknatural"
+    "_note": "SCHEDULED: Triggered 3 days post-delivery.",
+    "template": "Hope you’re enjoying your **RE-CYCLE PCOS/PCOD Hot Chocolate Blend**! 🤎☕\n\nIt’s been a couple of days since your order arrived, and we’d love to hear from you.\n\n**How are you liking the taste so far?** ✨\nYour feedback means a lot to us. 🤎\n\n— Team Askknatural"
   },
-  "scheduled/reorder_reminder_13d": {
+  "scheduled/reorder_reminder_25d": {
     "enabled": true,
-    "_note": "SCHEDULED: This is NOT a Shopify webhook event. Trigger this 13-15 days after delivery via a cron job or scheduler calling buildMessageForEvent() directly.",
-    "template": "Hi {{customer_first_name}},\n\nBy now, you would have felt the difference in clean energy and cravings.\n\nIf you're using it consistently, your bottle may be halfway through.\n\nDon't break momentum.\nReorder before it finishes.\n\n— The Good Fats by Askknatural"
+    "_note": "SCHEDULED: Triggered 25 days post-delivery for 30-day pack.",
+    "template": "Your RE-CYCLE journey continues 🤎☕\n\nYou’re almost through your **30-day pack**. To stay consistent with your routine, you can reorder your next pack now so there’s no gap. ✨\n\nUse code **REORDER10** for **10% off** your next order.\n\n**Reorder here:** {{Purchase Link}}\n\n— Team Askknatural"
   }
 }
