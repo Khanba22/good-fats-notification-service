@@ -31,6 +31,13 @@ function main() {
         fs.copyFileSync(templatesSrc, distTemplatesLegacy);
         console.log("[postbuild] Overwrote", path.relative(root, distTemplatesLegacy));
     }
+
+    const goodFatsSrc = path.join(srcConfig, "templates_good_fats.json");
+    const distGoodFatsLegacy = path.join(root, "dist", "templates_good_fats.json");
+    if (fs.existsSync(goodFatsSrc)) {
+        fs.copyFileSync(goodFatsSrc, distGoodFatsLegacy);
+        console.log("[postbuild] Overwrote", path.relative(root, distGoodFatsLegacy));
+    }
 }
 
 main();

@@ -55,7 +55,9 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const template_service_1 = require("./template.service");
 // ─── Template Loader ────────────────────────────────────
-const TEMPLATES_PATH = path.resolve(__dirname, "../config/templates.json");
+const GOOD_FATS_PATH = path.resolve(__dirname, "../config/templates_good_fats.json");
+const DEFAULT_PATH = path.resolve(__dirname, "../config/templates.json");
+const TEMPLATES_PATH = fs.existsSync(GOOD_FATS_PATH) ? GOOD_FATS_PATH : DEFAULT_PATH;
 let templatesCache = null;
 let lastLoadTime = 0;
 let templatesFileMtimeMs = 0;

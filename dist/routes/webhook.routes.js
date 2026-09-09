@@ -112,6 +112,12 @@ const TOPIC_KEYS = {
         "id",
         "phone",
     ],
+    "scheduled/post_delivery_2d": [
+        "customer_first_name",
+    ],
+    "scheduled/reorder_reminder_13d": [
+        "customer_first_name",
+    ],
     "scheduled/post_delivery_3d": [
         "customer_first_name",
     ],

@@ -16,9 +16,9 @@
 const ENDPOINT =
   process.env.WEBHOOK_ENDPOINT ||
   // "https://robbin-unexecutorial-invitingly.ngrok-free.dev/api/webhooks/shopify";
-  "http://localhost:3000/api/webhooks/shopify";
+  "https://showdown-curled-program.ngrok-free.dev/api/webhooks/shopify";
 
-const PHONE = "+91 8624909744";
+const PHONE = "+91 6265354245";
 
 function withPhoneFields(base) {
   // Phone extraction priority in src/utils/phone.utils.ts:

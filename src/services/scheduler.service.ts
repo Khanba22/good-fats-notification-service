@@ -27,14 +27,14 @@ interface ScheduledFollowUp {
 
 const FOLLOW_UPS: ScheduledFollowUp[] = [
     {
-        topic: "scheduled/post_delivery_3d",
-        delayDays: 3,
-        label: "Post-delivery feedback (3 days)",
+        topic: "scheduled/post_delivery_2d",
+        delayDays: 2,
+        label: "Post-delivery usage tips (2 days)",
     },
     {
-        topic: "scheduled/reorder_reminder_25d",
-        delayDays: 25,
-        label: "Reorder reminder (25 days)",
+        topic: "scheduled/reorder_reminder_13d",
+        delayDays: 13,
+        label: "Reorder reminder (13 days)",
     },
 ];
 
@@ -105,7 +105,7 @@ export async function schedulePostDeliveryFollowUps(
 
     if (scheduledCount === FOLLOW_UPS.length) {
         console.log(
-            `[Scheduler] One-time cron jobs scheduled for 3-day and 25-day follow-ups — customer "${customerName}", phone ${phone} (order ${orderRef})`
+            `[Scheduler] One-time cron jobs scheduled for 2-day and 13-day follow-ups — customer "${customerName}", phone ${phone} (order ${orderRef})`
         );
     } else if (scheduledCount > 0) {
         console.warn(
