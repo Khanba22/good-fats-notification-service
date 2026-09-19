@@ -60,13 +60,16 @@ const TEMPLATE_FILES = {
     'askknatural': path.resolve(__dirname, '../config/templates.json'),
 };
 const DEFAULT_PATH = path.resolve(__dirname, '../config/templates.json');
-function resolveTemplatePath() {
+// Resolved lazily on first use so process.env.STORE is already set by index.ts
+let TEMPLATES_PATH = null;
+function getTemplatePath() {
+    if (TEMPLATES_PATH)
+        return TEMPLATES_PATH;
     const store = process.env.STORE || '';
-    const resolved = TEMPLATE_FILES[store] || DEFAULT_PATH;
-    console.log(`[MessageService] Using template file: ${path.basename(resolved)} (store=${store || 'default'})`);
-    return resolved;
+    TEMPLATES_PATH = TEMPLATE_FILES[store] || DEFAULT_PATH;
+    console.log(`[MessageService] Using template file: ${path.basename(TEMPLATES_PATH)} (store=${store || 'default'})`);
+    return TEMPLATES_PATH;
 }
-const TEMPLATES_PATH = resolveTemplatePath();
 let templatesCache = null;
 let lastLoadTime = 0;
 let templatesFileMtimeMs = 0;
@@ -78,9 +81,10 @@ const CACHE_TTL_MS = 30_000; // Reload templates every 30 seconds max
  */
 function loadTemplates() {
     const now = Date.now();
+    const templatesPath = getTemplatePath();
     let mtimeMs = 0;
     try {
-        mtimeMs = fs.statSync(TEMPLATES_PATH).mtimeMs;
+        mtimeMs = fs.statSync(templatesPath).mtimeMs;
     }
     catch {
         mtimeMs = 0;
@@ -92,7 +96,7 @@ function loadTemplates() {
         return templatesCache;
     }
     try {
-        const raw = fs.readFileSync(TEMPLATES_PATH, "utf-8");
+        const raw = fs.readFileSync(templatesPath, "utf-8");
         const parsed = JSON.parse(raw);
         const { _docs: _ignoredMeta, ...rest } = parsed;
         templatesCache = rest;
@@ -104,7 +108,7 @@ function loadTemplates() {
         return templatesCache;
     }
     catch (error) {
-        console.error("[MessageService] Failed to load templates.json:", error.message);
+        console.error("[MessageService] Failed to load templates:", error.message);
         // Return cached version if available, otherwise empty
         return templatesCache || {};
     }

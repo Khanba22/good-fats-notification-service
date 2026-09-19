@@ -52,6 +52,23 @@ class NotificationService {
      *   avoiding indefinite broken states.
      */
     createClient() {
+        // On Linux servers, use system Chromium to avoid bundled-Chrome crashes.
+        // Falls back to puppeteer's bundled Chrome on Windows/Mac dev machines.
+        const fsSync = require('fs');
+        const SYSTEM_CHROMIUM_PATHS = [
+            '/usr/bin/chromium', // Debian Trixie / newer Ubuntu
+            '/usr/bin/chromium-browser', // Ubuntu 20 and older
+            '/snap/bin/chromium', // Snap install
+            '/usr/bin/google-chrome-stable', // Google Chrome
+            '/usr/bin/google-chrome',
+        ];
+        const executablePath = SYSTEM_CHROMIUM_PATHS.find(p => fsSync.existsSync(p));
+        if (executablePath) {
+            console.log(`[WhatsApp] Using system Chromium: ${executablePath}`);
+        }
+        else {
+            console.log(`[WhatsApp] No system Chromium found — using puppeteer bundled Chrome`);
+        }
         return new Client({
             authStrategy: new LocalAuth({
                 dataPath: './.wwebjs_auth'
@@ -59,12 +76,14 @@ class NotificationService {
             restartOnAuthFail: true,
             puppeteer: {
                 headless: true,
+                ...(executablePath ? { executablePath } : {}),
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
                     '--disable-gpu',
-                    '--disable-extensions'
+                    '--disable-extensions',
+                    '--disable-software-rasterizer',
                 ]
             }
         });
