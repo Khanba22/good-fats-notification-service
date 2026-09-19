@@ -14,9 +14,9 @@
  */
 
 const ENDPOINT =
-  process.env.WEBHOOK_ENDPOINT ||
-  // "https://robbin-unexecutorial-invitingly.ngrok-free.dev/api/webhooks/shopify";
-  "https://showdown-curled-program.ngrok-free.dev/api/webhooks/shopify";
+  process.env.WEBHOOK_ENDPOINT || "http://localhost:3000/api/webhooks/shopify";
+// "https://robbin-unexecutorial-invitingly.ngrok-free.dev/api/webhooks/shopify";
+//   "https://showdown-curled-program.ngrok-free.dev/api/webhooks/shopify";
 
 const PHONE = "+91 6265354245";
 
