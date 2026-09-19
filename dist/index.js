@@ -11,6 +11,27 @@ const webhook_routes_1 = __importDefault(require("./routes/webhook.routes"));
 const pages_routes_1 = __importDefault(require("./routes/pages.routes"));
 const notification_service_1 = require("./services/notification.service");
 const scheduler_service_1 = require("./services/scheduler.service");
+// ── CLI flag: --store <name> ──────────────────────────────
+// Determines which template set to load.
+// Usage: npm run dev -- --store good-fats
+//        npm run dev -- --store askknatural
+const STORE_MAP = {
+    'good-fats': 'good-fats',
+    'askknatural': 'askknatural',
+};
+const storeArgIndex = process.argv.indexOf('--store');
+const storeArg = storeArgIndex !== -1 ? process.argv[storeArgIndex + 1] : undefined;
+if (storeArg && STORE_MAP[storeArg]) {
+    process.env.STORE = STORE_MAP[storeArg];
+    console.log(`[Startup] Store set to: ${process.env.STORE}`);
+}
+else if (storeArg) {
+    console.warn(`[Startup] Unknown --store value "${storeArg}". Valid options: ${Object.keys(STORE_MAP).join(', ')}`);
+    console.warn(`[Startup] Falling back to default templates.`);
+}
+else {
+    console.log(`[Startup] No --store flag provided. Using default templates (askknatural).`);
+}
 // Load environment configurations from .env early inside index
 dotenv_1.default.config();
 const app = (0, express_1.default)();

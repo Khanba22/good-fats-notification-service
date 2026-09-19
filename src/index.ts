@@ -7,6 +7,28 @@ import pagesRoutes from './routes/pages.routes';
 import { notificationService } from './services/notification.service';
 import { cancelAllJobs } from './services/scheduler.service';
 
+// ── CLI flag: --store <name> ──────────────────────────────
+// Determines which template set to load.
+// Usage: npm run dev -- --store good-fats
+//        npm run dev -- --store askknatural
+const STORE_MAP: Record<string, string> = {
+    'good-fats':   'good-fats',
+    'askknatural': 'askknatural',
+};
+
+const storeArgIndex = process.argv.indexOf('--store');
+const storeArg = storeArgIndex !== -1 ? process.argv[storeArgIndex + 1] : undefined;
+
+if (storeArg && STORE_MAP[storeArg]) {
+    process.env.STORE = STORE_MAP[storeArg];
+    console.log(`[Startup] Store set to: ${process.env.STORE}`);
+} else if (storeArg) {
+    console.warn(`[Startup] Unknown --store value "${storeArg}". Valid options: ${Object.keys(STORE_MAP).join(', ')}`);
+    console.warn(`[Startup] Falling back to default templates.`);
+} else {
+    console.log(`[Startup] No --store flag provided. Using default templates (askknatural).`);
+}
+
 // Load environment configurations from .env early inside index
 dotenv.config();
 

@@ -27,9 +27,23 @@ type TemplateConfig = Record<string, TemplateEntry>;
 
 // ─── Template Loader ────────────────────────────────────
 
-const GOOD_FATS_PATH = path.resolve(__dirname, "../config/templates_good_fats.json");
-const DEFAULT_PATH = path.resolve(__dirname, "../config/templates.json");
-const TEMPLATES_PATH = fs.existsSync(GOOD_FATS_PATH) ? GOOD_FATS_PATH : DEFAULT_PATH;
+const TEMPLATE_FILES: Record<string, string> = {
+    'good-fats':   path.resolve(__dirname, '../config/templates_good_fats.json'),
+    'askknatural': path.resolve(__dirname, '../config/templates.json'),
+};
+
+const DEFAULT_PATH = path.resolve(__dirname, '../config/templates.json');
+
+// Resolved lazily on first use so process.env.STORE is already set by index.ts
+let TEMPLATES_PATH: string | null = null;
+
+function getTemplatePath(): string {
+    if (TEMPLATES_PATH) return TEMPLATES_PATH;
+    const store = process.env.STORE || '';
+    TEMPLATES_PATH = TEMPLATE_FILES[store] || DEFAULT_PATH;
+    console.log(`[MessageService] Using template file: ${path.basename(TEMPLATES_PATH)} (store=${store || 'default'})`);
+    return TEMPLATES_PATH;
+}
 
 let templatesCache: TemplateConfig | null = null;
 let lastLoadTime: number = 0;
@@ -43,10 +57,11 @@ const CACHE_TTL_MS = 30_000; // Reload templates every 30 seconds max
  */
 function loadTemplates(): TemplateConfig {
     const now = Date.now();
+    const templatesPath = getTemplatePath();
 
     let mtimeMs = 0;
     try {
-        mtimeMs = fs.statSync(TEMPLATES_PATH).mtimeMs;
+        mtimeMs = fs.statSync(templatesPath).mtimeMs;
     } catch {
         mtimeMs = 0;
     }
@@ -60,7 +75,7 @@ function loadTemplates(): TemplateConfig {
     }
 
     try {
-        const raw = fs.readFileSync(TEMPLATES_PATH, "utf-8");
+        const raw = fs.readFileSync(templatesPath, "utf-8");
         const parsed = JSON.parse(raw) as Record<string, unknown>;
         const { _docs: _ignoredMeta, ...rest } = parsed;
         templatesCache = rest as TemplateConfig;
@@ -71,7 +86,7 @@ function loadTemplates(): TemplateConfig {
         console.log(`[MessageService] Templates loaded (${Object.keys(templatesCache).length} events configured)`);
         return templatesCache;
     } catch (error: any) {
-        console.error("[MessageService] Failed to load templates.json:", error.message);
+        console.error("[MessageService] Failed to load templates:", error.message);
         // Return cached version if available, otherwise empty
         return templatesCache || {};
     }

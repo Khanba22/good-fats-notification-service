@@ -55,9 +55,18 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const template_service_1 = require("./template.service");
 // ─── Template Loader ────────────────────────────────────
-const GOOD_FATS_PATH = path.resolve(__dirname, "../config/templates_good_fats.json");
-const DEFAULT_PATH = path.resolve(__dirname, "../config/templates.json");
-const TEMPLATES_PATH = fs.existsSync(GOOD_FATS_PATH) ? GOOD_FATS_PATH : DEFAULT_PATH;
+const TEMPLATE_FILES = {
+    'good-fats': path.resolve(__dirname, '../config/templates_good_fats.json'),
+    'askknatural': path.resolve(__dirname, '../config/templates.json'),
+};
+const DEFAULT_PATH = path.resolve(__dirname, '../config/templates.json');
+function resolveTemplatePath() {
+    const store = process.env.STORE || '';
+    const resolved = TEMPLATE_FILES[store] || DEFAULT_PATH;
+    console.log(`[MessageService] Using template file: ${path.basename(resolved)} (store=${store || 'default'})`);
+    return resolved;
+}
+const TEMPLATES_PATH = resolveTemplatePath();
 let templatesCache = null;
 let lastLoadTime = 0;
 let templatesFileMtimeMs = 0;
