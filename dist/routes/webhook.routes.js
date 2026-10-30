@@ -70,6 +70,30 @@ function enrichPayload(topic, payload) {
     };
 }
 // ==========================================
+// Multi-Product Dispatch
+// ==========================================
+/**
+ * Returns one representative line_item per unique product_id.
+ * Variants / extra quantity of the same product collapse to a single entry.
+ * Orders with no line_items fall back to a single synthetic item so the
+ * template still renders via {{current_product.title}} = "".
+ */
+function getUniqueLineItems(payload) {
+    const items = payload?.line_items ?? [];
+    if (items.length === 0)
+        return [{}]; // sentinel so the loop runs once
+    const seen = new Set();
+    const unique = [];
+    for (const item of items) {
+        const key = item?.product_id ?? item?.title ?? item?.name;
+        if (!seen.has(key)) {
+            seen.add(key);
+            unique.push(item);
+        }
+    }
+    return unique;
+}
+// ==========================================
 // Debug — Per-Topic Key Extraction & Forward
 // ==========================================
 const MISSING = "Necessary key not found Can break";
@@ -226,35 +250,37 @@ router.post("/shopify", async (req, res) => {
             res.status(200).send("OK");
             return;
         }
-        // 1. Build the message from template + enriched payload
-        const message = (0, message_service_1.buildMessageForEvent)(topic, payload);
-        if (!message) {
-            console.warn(`[Shopify] Failed to build message for topic: "${topic}"`);
-            res.status(200).send("OK");
-            return;
-        }
-        // 2. Extract phone number from the payload
+        // 1. Extract phone number from the payload (common for all products)
         const phone = (0, phone_utils_1.extractPhone)(payload);
         if (!phone || phone.trim().length === 0) {
             console.warn(`[Shopify] No phone number found in payload for topic: "${topic}"`);
             res.status(200).send("OK");
             return;
         }
-        // 3. Send it
-        console.log(`[Shopify] Sending "${topic}" notification to ${phone}`);
-        const sent = await notification_service_1.notificationService.sendMessage(phone, message, payload);
-        if (sent) {
-            console.log(`[Shopify] ✅ "${topic}" notification sent successfully`);
-            // Send debug copy to developer (fire-and-forget)
-            void sendDebugToAdmin(topic, message, payload, phone);
-            // Schedule follow-up notifications for delivery events
-            if (topic === "orders/delivered") {
-                const orderId = payload?.order_number || payload?.name || payload?.id;
-                await (0, scheduler_service_1.schedulePostDeliveryFollowUps)(phone, payload, orderId);
+        // 2. Build + send one message per unique product in the order
+        const uniqueProducts = getUniqueLineItems(payload);
+        console.log(`[Shopify] "${topic}" — ${uniqueProducts.length} unique product(s) in order`);
+        for (const product of uniqueProducts) {
+            // Inject current_product so templates can use {{current_product.title}} etc.
+            const productPayload = { ...payload, current_product: product };
+            const message = (0, message_service_1.buildMessageForEvent)(topic, productPayload);
+            if (!message) {
+                console.warn(`[Shopify] Failed to build message for topic: "${topic}" / product: ${product?.title}`);
+                continue;
             }
-        }
-        else {
-            console.warn(`[Shopify] ⚠️ Failed to send "${topic}" notification`);
+            console.log(`[Shopify] Sending "${topic}" for "${product?.title || 'unknown'}" → ${phone}`);
+            const sent = await notification_service_1.notificationService.sendMessage(phone, message, productPayload);
+            if (sent) {
+                console.log(`[Shopify] ✅ Sent for "${product?.title || 'unknown'}"`);
+                void sendDebugToAdmin(topic, message, productPayload, phone);
+                if (topic === "orders/delivered") {
+                    const orderId = payload?.order_number || payload?.name || payload?.id;
+                    await (0, scheduler_service_1.schedulePostDeliveryFollowUps)(phone, productPayload, `${orderId}-${product?.product_id ?? product?.title}`);
+                }
+            }
+            else {
+                console.warn(`[Shopify] ⚠️ Failed to send for "${product?.title || 'unknown'}"`);
+            }
         }
         res.status(200).send("OK");
     }

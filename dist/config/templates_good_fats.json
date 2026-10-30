@@ -2,11 +2,11 @@
     "_docs": "Edit these templates freely — no code changes needed. Use {{dot.path}} to reference Shopify payload fields. Missing paths become empty strings. Use {{#if path}}...{{/if}} for conditionals and {{#each array}}...{{/each}} for loops.",
     "orders/create": {
         "enabled": true,
-        "template": "Hi {{customer_first_name}},\n\nYour order for The Good Fats Pure C8 MCT Oil has been successfully placed.\n\nWe're preparing it carefully.\nYou'll be notified once it moves to the next stage.\n\n— The Good Fats by Askknatural"
+        "template": "Hi {{customer_first_name}},\n\nYour order for {{current_product.title}} has been successfully placed.\n\nWe're preparing it carefully.\nYou'll be notified once it moves to the next stage.\n\n— The Good Fats by Askknatural"
     },
     "orders/paid": {
         "enabled": true,
-        "template": "Hi {{customer_first_name}},\n\nPayment received successfully ✅\n\nYour C8 MCT Oil is now being processed for dispatch.\n\n— The Good Fats by Askknatural"
+        "template": "Hi {{customer_first_name}},\n\nPayment received successfully ✅\n\nYour {{current_product.title}} is now being processed for dispatch.\n\n— The Good Fats by Askknatural"
     },
     "orders/fulfilled": {
         "enabled": true,
@@ -18,12 +18,12 @@
     },
     "orders/delivered": {
         "enabled": true,
-        "template": "Hi {{customer_first_name}},\n\nYour order has been delivered! 🎉\n\nEnjoy cleaner energy.\n\n— The Good Fats by Askknatural"
+        "template": "Hi {{customer_first_name}},\n\nYour {{current_product.title}} has been delivered! 🎉\n\nEnjoy cleaner energy.\n\n— The Good Fats by Askknatural"
     },
     "scheduled/post_delivery_2d": {
         "enabled": true,
         "_note": "SCHEDULED: This is NOT a Shopify webhook event. Trigger this 2 days after delivery via a cron job or scheduler calling buildMessageForEvent() directly.",
-        "template": "Hi {{customer_first_name}},\n\nHave you started your Pure C8 MCT Oil yet?\n\nStart with 1/2 tablespoon daily, preferably in coffee or your first meal.\nConsistency matters more than quantity.\n\nLet us know how your energy feels.\n\n— The Good Fats by Askknatural"
+        "template": "Hi {{customer_first_name}},\n\nHave you started your {{current_product.title}} yet?\n\nStart with 1/2 tablespoon daily, preferably in coffee or your first meal.\nConsistency matters more than quantity.\n\nLet us know how your energy feels.\n\n— The Good Fats by Askknatural"
     },
     "scheduled/reorder_reminder_13d": {
         "enabled": true,

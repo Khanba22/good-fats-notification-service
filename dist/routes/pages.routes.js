@@ -88,6 +88,25 @@ router.post("/test/send", async (req, res) => {
     }
 });
 // ==========================================
+// Auth Page — QR / Status
+// ==========================================
+router.get("/auth", (_req, res) => {
+    res.send(getAuthPage());
+});
+router.get("/auth/state", (_req, res) => {
+    const state = notification_service_1.notificationService.getAuthState();
+    res.json(state);
+});
+router.post("/auth/logout", async (_req, res) => {
+    try {
+        notification_service_1.notificationService.logout().catch((e) => console.error('[Auth] Logout error:', e?.message || e));
+        res.json({ ok: true });
+    }
+    catch (e) {
+        res.status(500).json({ ok: false, error: e?.message });
+    }
+});
+// ==========================================
 // HTML Page Generators
 // ==========================================
 function getHomePage(isReady, uptime) {
@@ -874,6 +893,370 @@ function getTestPage(isReady) {
 
         // Auto-focus phone input
         phoneInput.focus();
+    </script>
+</body>
+</html>`;
+}
+function getAuthPage() {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Auth — AskNatural</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-card: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.06);
+            --border-glow: rgba(99,102,241,0.3);
+            --text-primary: #f1f1f4;
+            --text-secondary: #8b8b9e;
+            --text-muted: #5a5a6e;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
+            --accent-glow: rgba(99,102,241,0.15);
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+        .bg-mesh {
+            position: fixed; inset: 0; z-index: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99,102,241,0.08), transparent),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(16,185,129,0.06), transparent);
+            animation: meshFloat 20s ease-in-out infinite alternate;
+        }
+        @keyframes meshFloat {
+            0% { transform: scale(1) translateY(0); }
+            100% { transform: scale(1.05) translateY(-20px); }
+        }
+        .container {
+            position: relative; z-index: 1;
+            max-width: 480px; width: 100%;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        .nav {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 40px; justify-content: center;
+        }
+        .nav a {
+            color: var(--text-muted); text-decoration: none;
+            font-size: 0.9rem; transition: color 0.2s;
+        }
+        .nav a:hover { color: var(--text-primary); }
+        .nav .sep { color: var(--text-muted); }
+        .nav .current { color: var(--accent-light); font-weight: 500; }
+
+        h1 {
+            font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 32px; }
+
+        /* Main card */
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 24px; padding: 36px 32px;
+            position: relative; overflow: hidden;
+        }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+        }
+
+        /* QR area */
+        #qr-area { display: none; }
+        #qr-area.visible { display: block; }
+        .qr-wrap {
+            width: 220px; height: 220px; margin: 0 auto 24px;
+            border-radius: 16px; overflow: hidden;
+            border: 2px solid var(--border-glow);
+            background: white;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .qr-wrap img { width: 100%; height: 100%; object-fit: contain; }
+        .qr-wrap .qr-loading {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(10,10,15,0.7); border-radius: 14px;
+            font-size: 0.8rem; color: var(--text-muted);
+            flex-direction: column; gap: 10px;
+        }
+        .spin {
+            width: 24px; height: 24px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent-light);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Countdown */
+        .countdown-wrap {
+            margin-bottom: 16px;
+        }
+        .countdown-label {
+            font-size: 0.75rem; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px;
+        }
+        .countdown-bar-bg {
+            height: 4px; border-radius: 4px;
+            background: rgba(255,255,255,0.05); overflow: hidden; margin-bottom: 8px;
+        }
+        .countdown-bar {
+            height: 100%; border-radius: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            transition: width 1s linear, background 0.5s;
+            width: 100%;
+        }
+        .countdown-bar.urgent { background: linear-gradient(90deg, var(--warning), var(--danger)); }
+        .countdown-num {
+            font-size: 1.5rem; font-weight: 700;
+            color: var(--accent-light);
+        }
+        .countdown-num.urgent { color: var(--danger); }
+        .countdown-sub {
+            font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;
+        }
+
+        /* Connected state */
+        #connected-area { display: none; }
+        #connected-area.visible { display: block; }
+        .connected-icon { font-size: 3.5rem; margin-bottom: 16px; }
+        .connected-text {
+            font-size: 1.1rem; font-weight: 600;
+            color: var(--success); margin-bottom: 8px;
+        }
+        .connected-sub { font-size: 0.875rem; color: var(--text-secondary); }
+
+        /* Initializing state */
+        #init-area { display: block; }
+        #init-area.hidden { display: none; }
+        .init-icon { font-size: 2.5rem; margin-bottom: 16px; }
+        .init-text { font-size: 0.95rem; color: var(--text-secondary); }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 8px; padding: 12px 24px; border-radius: 12px;
+            font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; border: none; transition: all 0.25s; text-decoration: none;
+            margin-top: 20px;
+        }
+        .btn-danger {
+            background: rgba(239,68,68,0.12);
+            color: var(--danger);
+            border: 1px solid rgba(239,68,68,0.25);
+        }
+        .btn-danger:hover {
+            background: rgba(239,68,68,0.2);
+            transform: translateY(-1px);
+        }
+        .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn-ghost {
+            background: var(--bg-card); color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { color: var(--text-primary); border-color: var(--border-glow); }
+
+        .footer {
+            text-align: center; margin-top: 40px;
+            color: var(--text-muted); font-size: 0.78rem;
+        }
+        .footer a { color: var(--accent-light); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 480px) {
+            .card { padding: 24px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="container">
+        <nav class="nav">
+            <a href="/">← Home</a>
+            <span class="sep">/</span>
+            <span class="current">WhatsApp Auth</span>
+        </nav>
+
+        <h1>📱 WhatsApp Auth</h1>
+        <p class="subtitle">Manage your WhatsApp session for the notification service.</p>
+
+        <div class="card">
+            <!-- Initializing / waiting for first poll -->
+            <div id="init-area">
+                <div class="init-icon">⏳</div>
+                <p class="init-text">Checking connection status…</p>
+            </div>
+
+            <!-- QR code to scan -->
+            <div id="qr-area">
+                <div class="qr-wrap">
+                    <img id="qr-img" src="" alt="WhatsApp QR Code">
+                    <div class="qr-loading" id="qr-loading">
+                        <div class="spin"></div>
+                        <span>Generating QR…</span>
+                    </div>
+                </div>
+
+                <div class="countdown-wrap">
+                    <div class="countdown-label">QR expires in</div>
+                    <div class="countdown-bar-bg">
+                        <div class="countdown-bar" id="cbar"></div>
+                    </div>
+                    <div class="countdown-num" id="cnum">–</div>
+                    <div class="countdown-sub">Scan with WhatsApp → Linked Devices → Link a Device</div>
+                </div>
+
+                <button class="btn btn-danger" id="logout-btn" onclick="doLogout()">
+                    🔄 Logout &amp; Reinitiate
+                </button>
+            </div>
+
+            <!-- Connected -->
+            <div id="connected-area">
+                <div class="connected-icon">✅</div>
+                <div class="connected-text">WhatsApp Connected</div>
+                <div class="connected-sub">The notification service is active and ready to send messages.</div>
+
+                <button class="btn btn-danger" id="logout-btn-conn" onclick="doLogout()">
+                    🔒 Logout &amp; Re-scan
+                </button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <a href="/">← Home</a> &nbsp;·&nbsp; <a href="/health">Health</a>
+        </div>
+    </div>
+
+    <script>
+        const POLL_INTERVAL = 10_000;  // 10 seconds
+        const QR_WINDOW    = 120_000;  // 120 seconds server-side window
+
+        let pollTimer = null;
+
+        async function poll() {
+            try {
+                const res = await fetch('/auth/state');
+                const state = await res.json();
+                render(state);
+            } catch (e) {
+                console.error('Poll error:', e);
+            }
+        }
+
+        function render(state) {
+            const initEl   = document.getElementById('init-area');
+            const qrEl     = document.getElementById('qr-area');
+            const connEl   = document.getElementById('connected-area');
+
+            if (state.ready) {
+                // Connected
+                initEl.classList.add('hidden');
+                qrEl.classList.remove('visible');
+                connEl.classList.add('visible');
+                stopCountdown();
+                return;
+            }
+
+            initEl.classList.add('hidden');
+            connEl.classList.remove('visible');
+            qrEl.classList.add('visible');
+
+            // QR image
+            const qrImg     = document.getElementById('qr-img');
+            const qrLoading = document.getElementById('qr-loading');
+            if (state.qr) {
+                qrImg.src = state.qr;
+                qrLoading.style.display = 'none';
+            } else {
+                qrLoading.style.display = 'flex';
+            }
+
+            // Countdown synced to server clientCreatedAt
+            if (state.clientCreatedAt) {
+                startCountdown(state.clientCreatedAt);
+            }
+        }
+
+        let countdownTimer = null;
+        let currentCreatedAt = null;
+
+        function startCountdown(createdAt) {
+            if (currentCreatedAt === createdAt) return; // already running for this session
+            currentCreatedAt = createdAt;
+            stopCountdown();
+            tick(createdAt);
+            countdownTimer = setInterval(() => tick(createdAt), 1000);
+        }
+
+        function stopCountdown() {
+            if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+            currentCreatedAt = null;
+        }
+
+        function tick(createdAt) {
+            const elapsed  = Date.now() - createdAt;
+            const remaining = Math.max(0, Math.ceil((QR_WINDOW - elapsed) / 1000));
+            const pct       = Math.max(0, (QR_WINDOW - elapsed) / QR_WINDOW * 100);
+            const urgent    = remaining <= 20;
+
+            const cnum = document.getElementById('cnum');
+            const cbar = document.getElementById('cbar');
+
+            if (cnum) {
+                cnum.textContent = remaining + 's';
+                cnum.classList.toggle('urgent', urgent);
+            }
+            if (cbar) {
+                cbar.style.width = pct + '%';
+                cbar.classList.toggle('urgent', urgent);
+            }
+
+            if (remaining === 0) {
+                stopCountdown();
+                // Server will recreate the client; do a hard refresh after a short delay
+                setTimeout(() => location.reload(), 1500);
+            }
+        }
+
+        async function doLogout() {
+            const btns = document.querySelectorAll('#logout-btn, #logout-btn-conn');
+            btns.forEach(b => { b.disabled = true; b.textContent = 'Logging out…'; });
+
+            try {
+                await fetch('/auth/logout', { method: 'POST' });
+            } catch (e) { /* ignore */ }
+
+            // Redirect back after a short delay (server is reinitializing)
+            setTimeout(() => location.reload(), 1500);
+        }
+
+        // Start polling
+        poll();
+        pollTimer = setInterval(poll, POLL_INTERVAL);
     </script>
 </body>
 </html>`;
