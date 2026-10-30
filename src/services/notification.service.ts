@@ -16,6 +16,7 @@
 
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const qrcodeLib = require('qrcode');
 
 // Admin phone for error alerts (cleaned format, no +)
 const ADMIN_PHONE = process.env.ADMIN_ALERT_PHONE || "918624909744";
@@ -36,6 +37,10 @@ export class NotificationService {
     private isDestroying: boolean = false;
     private healthCheckTimer: ReturnType<typeof setInterval> | null = null;
 
+    // Auth / QR state exposed to the /auth endpoint
+    public latestQr: string | null = null;        // base64 PNG data URI
+    public clientCreatedAt: number | null = null;  // epoch ms when current client was created
+
     // ─── Lifecycle ──────────────────────────────────────
 
     /**
@@ -45,6 +50,8 @@ export class NotificationService {
     public async initialize(): Promise<void> {
         console.log('[WhatsApp] Initializing client...');
         this.isDestroying = false;
+        this.latestQr = null;
+        this.clientCreatedAt = Date.now();
         this.client = this.createClient();
         this.attachEventListeners();
         await this.initializeClient();
@@ -130,16 +137,23 @@ export class NotificationService {
      * Includes automatic reconnection on disconnect and auth failures.
      */
     private attachEventListeners(): void {
-        this.client.on('qr', (qr: string) => {
+        this.client.on('qr', async (qr: string) => {
             console.log('\n=== WhatsApp QR Code ===');
             qrcode.generate(qr, { small: true });
             console.log('Scan the QR code above with your WhatsApp mobile app\n');
+            // Convert to base64 PNG for the /auth UI
+            try {
+                this.latestQr = await qrcodeLib.toDataURL(qr);
+            } catch (e) {
+                console.error('[WhatsApp] Failed to generate QR data URL:', e);
+            }
         });
 
         this.client.on('ready', () => {
             console.log('✅ WhatsApp client is ready!');
             this.ready = true;
-            this.reconnectAttempts = 0; // Reset backoff on successful connection
+            this.latestQr = null; // clear QR once logged in
+            this.reconnectAttempts = 0;
             this.isReconnecting = false;
         });
 
@@ -224,23 +238,21 @@ export class NotificationService {
         console.log(`[WhatsApp] Reconnecting... (attempt #${this.reconnectAttempts})`);
 
         try {
-            // Destroy the old client if it exists
             if (this.client) {
                 try { await this.client.destroy(); } catch (_e) { /* ignore */ }
                 this.client = null;
             }
 
-            // Create and initialize a fresh client
+            this.latestQr = null;
+            this.clientCreatedAt = Date.now();
             this.client = this.createClient();
             this.attachEventListeners();
             await this.initializeClient();
 
             console.log('[WhatsApp] ✅ Reconnection successful!');
-            // reconnectAttempts is reset in the 'ready' event handler
         } catch (error: any) {
             console.error('[WhatsApp] Reconnection failed:', error?.message || error);
             this.isReconnecting = false;
-            // Schedule another attempt
             this.scheduleReconnect('reconnect_failed');
         }
     }
@@ -296,11 +308,19 @@ export class NotificationService {
 
     // ─── Public State ───────────────────────────────────
 
-    /**
-     * Check if the WhatsApp client is ready to send messages.
-     */
     public isReady(): boolean {
         return this.ready && this.client !== null;
+    }
+
+    /**
+     * Returns auth state for the /auth polling endpoint.
+     */
+    public getAuthState(): { ready: boolean; qr: string | null; clientCreatedAt: number | null } {
+        return {
+            ready: this.isReady(),
+            qr: this.latestQr,
+            clientCreatedAt: this.clientCreatedAt,
+        };
     }
 
     /**
@@ -316,6 +336,42 @@ export class NotificationService {
             this.client = null;
             this.ready = false;
         }
+    }
+
+    /**
+     * Logs out: wipes .wwebjs_auth + .wwebjs_cache, then reinitializes a fresh client.
+     * Called by the /auth logout button.
+     */
+    public async logout(): Promise<void> {
+        console.log('[WhatsApp] Logout requested — wiping session data...');
+        this.isDestroying = true;
+        this.stopHealthCheck();
+
+        if (this.client) {
+            try { await this.client.destroy(); } catch (_e) { /* ignore */ }
+            this.client = null;
+            this.ready = false;
+        }
+
+        // Wipe persisted session data
+        const fsSync = require('fs');
+        const pathMod = require('path');
+        for (const dir of ['.wwebjs_auth', '.wwebjs_cache']) {
+            const fullPath = pathMod.resolve(process.cwd(), dir);
+            try {
+                fsSync.rmSync(fullPath, { recursive: true, force: true });
+                console.log(`[WhatsApp] Removed ${dir}`);
+            } catch (e: any) {
+                console.warn(`[WhatsApp] Could not remove ${dir}:`, e?.message);
+            }
+        }
+
+        this.latestQr = null;
+        this.reconnectAttempts = 0;
+
+        // Reinitialize fresh
+        await this.initialize();
+        console.log('[WhatsApp] Logout complete — fresh client started.');
     }
 
     // ─── Message Sending ────────────────────────────────
